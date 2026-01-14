@@ -132,7 +132,7 @@ def validate():
         system_name = system_names.get(system_code, system_code)
 
         rows.append([
-            system_file,
+            system_name,
             matched,
             total,
             f"{coverage:.2f}%"
