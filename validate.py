@@ -2,17 +2,25 @@ import os
 import csv
 from tabulate import tabulate
 
+# -------------------------
+# Paths
+# -------------------------
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 LIST_FILE = os.path.join(BASE_DIR, "list_files", "TBKS1.list")
 SYSTEMS_DIR = os.path.join(BASE_DIR, "..", "PhotoData", "_systems")
 SYSTEMS_INDEX = os.path.join(BASE_DIR, "..", "PhotoData", "systems.csv")
+
 HTML_OUT = os.path.join(BASE_DIR, "coverage.html")
 
+# -------------------------
+# Load system route files
+# -------------------------
 
 def load_systems():
     """
     Loads all _systems CSV files.
-
 
     Returns:
       systems: (region, display_name) -> { file, code }
@@ -30,8 +38,7 @@ def load_systems():
 
         with open(path, newline="", encoding="utf-8") as f:
             reader = csv.reader(f, delimiter=";")
-
-            next(reader, None)
+            next(reader, None)  # header
 
             for row in reader:
                 if len(row) < 3:
@@ -41,9 +48,6 @@ def load_systems():
                 region = row[1].strip()
                 display = row[2].strip()
 
-
-
-
                 systems[(region, display)] = {
                     "file": filename,
                     "code": route_code
@@ -52,6 +56,10 @@ def load_systems():
                 system_totals[filename] += 1
 
     return systems, system_totals
+
+# -------------------------
+# Load user .list file
+# -------------------------
 
 def parse_list_file():
     """
@@ -73,6 +81,10 @@ def parse_list_file():
                 print(f"⚠️ Invalid line format: {line}")
 
     return entries
+
+# -------------------------
+# Load system name index
+# -------------------------
 
 def load_system_name_map():
     """
@@ -97,6 +109,10 @@ def load_system_name_map():
 
     return name_map
 
+# -------------------------
+# Validation + Reporting
+# -------------------------
+
 def validate():
     systems, system_totals = load_systems()
     system_names = load_system_name_map()
@@ -106,22 +122,30 @@ def validate():
 
     matched_by_system = {}
     missing = []
+    route_rows = []
 
+    # ---- Route-level validation ----
     for region, route in entries:
         key = (region, route)
 
         if key not in systems:
             missing.append(f"{region} {route}")
+            route_rows.append((region, route, "UNKNOWN", "Missing"))
             continue
 
         system_file = systems[key]["file"]
+        system_code = system_file.replace(".csv", "")
+        system_name = system_names.get(system_code, system_code)
+
         matched_by_system.setdefault(system_file, set()).add(
             f"{region} {route}"
         )
 
+        route_rows.append((region, route, system_name, "Matched"))
+
     print(f"\nTotal routes in list: {total_list_routes}")
 
-    # ---- TABLE OUTPUT (this replaces the old print loop) ----
+    # ---- System summary table ----
     rows = []
 
     for system_file in sorted(system_totals):
@@ -145,34 +169,10 @@ def validate():
         headers=["System", "Matched", "Total", "Coverage"],
         tablefmt="github"
     ))
-    # ---- END TABLE OUTPUT ----
 
-    if missing:
-        print("\n❌ Missing routes:")
-        for m in sorted(missing):
-            print(" ", m)
-    else:
-        print("\n✅ All routes found in systems")
-
-
-if __name__ == "__main__":
-    validate()
-
-    for region, route in entries:
-    key = (region, route)
-
-    if key not in systems:
-        route_rows.append((region, route, "UNKNOWN", "Missing"))
-        continue
-
-    system_file = systems[key]["file"]
-    system_code = system_file.replace(".csv", "")
-    system_name = system_names.get(system_code, system_code)
-
-    route_rows.append((region, route, system_name, "Matched"))
-
+    # ---- HTML export ----
     with open(HTML_OUT, "w", encoding="utf-8") as f:
-    f.write("""<!DOCTYPE html>
+        f.write("""<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
@@ -197,19 +197,33 @@ th { background: #eee; }
 </tr>
 """)
 
-    for region, route, system, status in route_rows:
-        css_class = "matched" if status == "Matched" else "missing"
-        f.write(
-            f"<tr class='{css_class}'>"
-            f"<td>{region}</td>"
-            f"<td>{route}</td>"
-            f"<td>{system}</td>"
-            f"<td>{status}</td>"
-            f"</tr>\n"
-        )
+        for region, route, system, status in route_rows:
+            css_class = "matched" if status == "Matched" else "missing"
+            f.write(
+                f"<tr class='{css_class}'>"
+                f"<td>{region}</td>"
+                f"<td>{route}</td>"
+                f"<td>{system}</td>"
+                f"<td>{status}</td>"
+                f"</tr>\n"
+            )
 
-    f.write("""
+        f.write("""
 </table>
 </body>
 </html>
 """)
+
+    if missing:
+        print(f"\n❌ Missing routes: {len(missing)}")
+    else:
+        print("\n✅ All routes found in systems")
+
+    print(f"\n📄 HTML report written to: {HTML_OUT}")
+
+# -------------------------
+# Entry point
+# -------------------------
+
+if __name__ == "__main__":
+    validate()
