@@ -8,9 +8,8 @@ SYSTEMS_DIR = os.path.join(BASE_DIR, "..", "PhotoData", "_systems")
 
 def load_systems():
     """
-    Load all _systems/*.csv files into memory.
-    Returns:
-        dict keyed by (region, route)
+    Load all _systems/*.csv files.
+    Keyed by (region, display_name)
     """
     systems = {}
 
@@ -22,14 +21,19 @@ def load_systems():
         with open(path, newline="", encoding="utf-8") as f:
             reader = csv.reader(f, delimiter=";")
             for row in reader:
-                if len(row) < 2:
+                if len(row) < 3:
                     continue
-                route = row[0].strip()
-                region = row[1].strip()
-                systems[(region, route)] = filename
+
+                route_code = row[0].strip()      # I10
+                region = row[1].strip()          # AL
+                display = row[2].strip()         # I-10
+
+                systems[(region, display)] = {
+                    "file": filename,
+                    "code": route_code
+                }
 
     return systems
-
 
 def parse_list_file():
     """
