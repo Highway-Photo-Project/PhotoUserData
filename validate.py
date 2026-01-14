@@ -25,21 +25,24 @@ def load_systems():
         system_totals[filename] = 0
 
         with open(path, newline="", encoding="utf-8") as f:
-            reader = csv.reader(f, delimiter=";")
-            for row in reader:
-                if len(row) < 3:
-                    continue
+    reader = csv.reader(f, delimiter=";")
 
-                route_code = row[0].strip()
-                region = row[1].strip()
-                display = row[2].strip()
+    next(reader, None)  # ⬅️ skip header row
 
-                systems[(region, display)] = {
-                    "file": filename,
-                    "code": route_code
-                }
+    for row in reader:
+        if len(row) < 3:
+            continue
 
-                system_totals[filename] += 1
+        route_code = row[0].strip()
+        region = row[1].strip()
+        display = row[2].strip()
+
+        systems[(region, display)] = {
+            "file": filename,
+            "code": route_code
+        }
+
+        system_totals[filename] += 1
 
     return systems, system_totals
 
