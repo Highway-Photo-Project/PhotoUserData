@@ -5,6 +5,7 @@ from tabulate import tabulate
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 LIST_FILE = os.path.join(BASE_DIR, "list_files", "TBKS1.list")
 SYSTEMS_DIR = os.path.join(BASE_DIR, "..", "PhotoData", "_systems")
+SYSTEMS_INDEX = os.path.join(BASE_DIR, "systems.csv")
 
 
 def load_systems():
@@ -72,9 +73,32 @@ def parse_list_file():
 
     return entries
 
+def load_system_name_map():
+    """
+    Loads systems.csv
+    Returns:
+      { system_code -> full system name }
+    """
+    name_map = {}
+
+    with open(SYSTEMS_INDEX, newline="", encoding="utf-8") as f:
+        reader = csv.reader(f, delimiter=";")
+        next(reader, None)  # header
+
+        for row in reader:
+            if len(row) < 3:
+                continue
+
+            system_code = row[0].strip()
+            full_name = row[2].strip()
+
+            name_map[system_code] = full_name
+
+    return name_map
 
 def validate():
     systems, system_totals = load_systems()
+    system_names = load_system_name_map()
     entries = parse_list_file()
 
     total_list_routes = len(entries)
@@ -103,6 +127,9 @@ def validate():
         matched = len(matched_by_system.get(system_file, set()))
         total = system_totals[system_file]
         coverage = (matched / total * 100) if total else 0.0
+
+        system_code = system_file.replace(".csv", "")
+        system_name = system_names.get(system_code, system_code)
 
         rows.append([
             system_file,
