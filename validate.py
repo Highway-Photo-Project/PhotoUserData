@@ -116,11 +116,11 @@ def load_system_name_map():
 
 def completion_to_hsl(percent):
     """
-    Matches Travel Mapping table colors:
-      0%   -> red
-      100% -> green
+    Completion-based color scale:
+      0%   -> hsl(0,   70%, 80%)
+      100% -> hsl(240, 70%, 80%)
     """
-    max_hue = 150.0
+    max_hue = 240.0
     hue = percent * max_hue / 100.0
     return f"hsl({hue:.6f}, 70%, 80%)"
 
