@@ -97,21 +97,26 @@ def validate():
 
     print(f"\nTotal routes in list: {total_list_routes}\n")
 
-    print("System coverage:")
-    for system_file in sorted(system_totals):
-        matched = len(matched_by_system.get(system_file, set()))
-        total = system_totals[system_file]
+    rows = []
 
-        if total > 0:
-            coverage = (matched / total) * 100
-        else:
-            coverage = 0.0
+for system_file in sorted(system_totals):
+    matched = len(matched_by_system.get(system_file, set()))
+    total = system_totals[system_file]
+    coverage = (matched / total * 100) if total else 0.0
 
-        print(
-            f"  {system_file:10} "
-            f"{matched:4d} / {total:4d} routes "
-            f"({coverage:6.2f}%)"
-        )
+    rows.append([
+        system_file,
+        matched,
+        total,
+        f"{coverage:.2f}%"
+    ])
+
+print("\nSystem coverage:")
+print(tabulate(
+    rows,
+    headers=["System", "Matched", "Total", "Coverage"],
+    tablefmt="github"
+))
 
     if missing:
         print("\n❌ Missing routes:")
