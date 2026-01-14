@@ -49,18 +49,17 @@ def load_systems():
                 if len(row) < 3:
                     continue
 
-                route_code = row[0].strip()
+                system_code = row[0].strip()
                 region = row[1].strip()
-                display = row[2].strip()
+                route_name = row[2].strip()
 
-                systems[(region, display)] = {
+                systems[(region, route_name)] = {
                     "file": filename,
-                    "route_code": route_code
+                    "route_code": route_name
                 }
 
-                # FINAL RULE:
-                # Count each route designation only once per system
-                system_routes[filename].add(route_code)
+                # Deduplicate by route designation ONLY
+                system_routes[filename].add(route_name)
 
     return systems, system_routes
 
