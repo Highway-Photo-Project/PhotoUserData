@@ -8,11 +8,12 @@ from tabulate import tabulate
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-LIST_FILE = os.path.join(BASE_DIR, "list_files", "TBKS1.list")
+LIST_DIR = os.path.join(BASE_DIR, "list_files")
+OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
 SYSTEMS_DIR = os.path.join(BASE_DIR, "..", "PhotoData", "_systems")
 SYSTEMS_INDEX = os.path.join(BASE_DIR, "..", "PhotoData", "systems.csv")
 
-HTML_OUT = os.path.join(BASE_DIR, "system_coverage.html")
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # --------------------------------------------------
 # Load system route definitions
@@ -22,14 +23,14 @@ def load_systems():
     """
     Returns:
       systems:
-        (region, display) -> {
+        (region, route_name) -> {
             "file": system_file,
-            "route_code": route_code
+            "route_code": route_name
         }
 
       system_routes:
-        system_file -> set(route_code)
-        (deduplicated by route code ONLY)
+        system_file -> set(route_name)
+        (deduplicated by route designation ONLY)
     """
     systems = {}
     system_routes = {}
@@ -49,7 +50,6 @@ def load_systems():
                 if len(row) < 3:
                     continue
 
-                system_code = row[0].strip()
                 region = row[1].strip()
                 route_name = row[2].strip()
 
@@ -58,19 +58,20 @@ def load_systems():
                     "route_code": route_name
                 }
 
-                # Deduplicate by route designation ONLY
+                # FINAL RULE:
+                # Count each route designation once per system
                 system_routes[filename].add(route_name)
 
     return systems, system_routes
 
 # --------------------------------------------------
-# Parse .list file
+# Parse a .list file
 # --------------------------------------------------
 
-def parse_list_file():
+def parse_list_file(path):
     entries = []
 
-    with open(LIST_FILE, encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line or line.startswith("#"):
@@ -115,103 +116,48 @@ def load_system_name_map():
 
 def completion_to_hsl(percent):
     """
-    Replicates Travel Mapping table coloring.
-
-    0%   -> red
-    100% -> green
-
-    TM-style parameters:
-      hue: 0–150
-      saturation: 70%
-      lightness: 80%
+    Matches Travel Mapping table colors:
+      0%   -> red
+      100% -> green
     """
     max_hue = 150.0
     hue = percent * max_hue / 100.0
     return f"hsl({hue:.6f}, 70%, 80%)"
 
 # --------------------------------------------------
-# Main validation
+# HTML report writer
 # --------------------------------------------------
 
-def validate():
-    systems, system_routes = load_systems()
-    system_names = load_system_name_map()
-    entries = parse_list_file()
-
-    matched_routes = {}
-
-    # Track matched route codes (deduped)
-    for region, route in entries:
-        key = (region, route)
-        if key not in systems:
-            continue
-
-        info = systems[key]
-        system_file = info["file"]
-        route_code = info["route_code"]
-
-        matched_routes.setdefault(system_file, set()).add(route_code)
-
-    # Build system summary
-    summary = []
-
-    for system_file, route_codes in system_routes.items():
-        total = len(route_codes)
-        matched = len(matched_routes.get(system_file, set()))
-        pct = (matched / total * 100) if total else 0.0
-
-        system_code = system_file.replace(".csv", "")
-        system_name = system_names.get(system_code, system_code)
-
-        summary.append((system_name, matched, total, pct))
-
-    # Sort like Travel Mapping (highest completion first)
-    summary.sort(key=lambda r: r[3], reverse=True)
-
-    # --------------------------------------------------
-    # Console output
-    # --------------------------------------------------
-
-    print("\nSystem coverage:")
-    print(tabulate(
-        [(s, m, t, f"{p:.2f}%") for s, m, t, p in summary],
-        headers=["System", "Matched", "Total", "Completion"],
-        tablefmt="github"
-    ))
-
-    # --------------------------------------------------
-    # HTML output (TM-style)
-    # --------------------------------------------------
-
-    with open(HTML_OUT, "w", encoding="utf-8") as f:
-        f.write("""<!DOCTYPE html>
+def write_html_report(user_id, summary, html_out):
+    with open(html_out, "w", encoding="utf-8") as f:
+        f.write(f"""<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
-<title>Highway System Completion</title>
+<title>{user_id} – Highway System Completion</title>
 <style>
-body {
+body {{
   font-family: Arial, sans-serif;
-}
-table {
+}}
+table {{
   border-collapse: collapse;
   width: 100%;
-}
-th, td {
+}}
+th, td {{
   border: 1px solid #ccc;
   padding: 6px 8px;
-}
-th {
+}}
+th {{
   background: #eee;
-}
-td.num {
+}}
+td.num {{
   text-align: right;
-}
+}}
 </style>
 </head>
 <body>
 
-<h1>Highway System Completion</h1>
+<h1>{user_id} – Highway System Completion</h1>
 
 <table>
 <tr>
@@ -240,11 +186,64 @@ td.num {
 </html>
 """)
 
-    print(f"\n📄 HTML report written to: {HTML_OUT}")
+# --------------------------------------------------
+# Main multi-user validation
+# --------------------------------------------------
+
+def validate_all():
+    systems, system_routes = load_systems()
+    system_names = load_system_name_map()
+
+    for filename in sorted(os.listdir(LIST_DIR)):
+        if not filename.endswith(".list"):
+            continue
+
+        user_id = os.path.splitext(filename)[0]
+        list_path = os.path.join(LIST_DIR, filename)
+        html_out = os.path.join(OUTPUT_DIR, f"{user_id}.html")
+
+        entries = parse_list_file(list_path)
+        matched_routes = {}
+
+        for region, route in entries:
+            key = (region, route)
+            if key not in systems:
+                continue
+
+            info = systems[key]
+            system_file = info["file"]
+            route_code = info["route_code"]
+
+            matched_routes.setdefault(system_file, set()).add(route_code)
+
+        summary = []
+
+        for system_file, route_codes in system_routes.items():
+            total = len(route_codes)
+            matched = len(matched_routes.get(system_file, set()))
+            pct = (matched / total * 100) if total else 0.0
+
+            system_code = system_file.replace(".csv", "")
+            system_name = system_names.get(system_code, system_code)
+
+            summary.append((system_name, matched, total, pct))
+
+        summary.sort(key=lambda r: r[3], reverse=True)
+
+        # Console output (per user)
+        print(f"\nUser: {user_id}")
+        print(tabulate(
+            [(s, m, t, f"{p:.2f}%") for s, m, t, p in summary],
+            headers=["System", "Matched", "Total", "Completion"],
+            tablefmt="github"
+        ))
+
+        write_html_report(user_id, summary, html_out)
+        print(f"📄 HTML report written to: {html_out}")
 
 # --------------------------------------------------
 # Entry point
 # --------------------------------------------------
 
 if __name__ == "__main__":
-    validate()
+    validate_all()
