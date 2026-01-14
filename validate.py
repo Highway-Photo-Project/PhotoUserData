@@ -3,7 +3,7 @@ import csv
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 LIST_FILE = os.path.join(BASE_DIR, "list_files", "TBKS1.list")
-SYSTEMS_DIR = os.path.join(BASE_DIR, "_systems")
+SYSTEMS_DIR = os.path.join(BASE_DIR, "..", "PhotoData", "_systems")
 
 
 def load_systems():
