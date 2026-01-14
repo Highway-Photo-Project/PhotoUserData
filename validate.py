@@ -8,36 +8,40 @@ SYSTEMS_DIR = os.path.join(BASE_DIR, "..", "PhotoData", "_systems")
 
 def load_systems():
     """
-    Load all _systems/*.csv files.
-    Keyed by (region, display_name)
+    Loads all _systems CSV files.
 
+    Returns:
+      systems: (region, display_name) -> { file, code }
+      system_totals: system_file -> total routes in that system
     """
     systems = {}
+    system_totals = {}
 
     for filename in os.listdir(SYSTEMS_DIR):
         if not filename.endswith(".csv"):
             continue
 
         path = os.path.join(SYSTEMS_DIR, filename)
+        system_totals[filename] = 0
+
         with open(path, newline="", encoding="utf-8") as f:
             reader = csv.reader(f, delimiter=";")
             for row in reader:
                 if len(row) < 3:
                     continue
 
-
-
-
-                route_code = row[0].strip()      # I10
-                region = row[1].strip()          # AL
-                display = row[2].strip()         # I-10
+                route_code = row[0].strip()
+                region = row[1].strip()
+                display = row[2].strip()
 
                 systems[(region, display)] = {
                     "file": filename,
                     "code": route_code
                 }
 
-    return systems
+                system_totals[filename] += 1
+
+    return systems, system_totals
 
 def parse_list_file():
     """
@@ -62,13 +66,13 @@ def parse_list_file():
 
 
 def validate():
-    systems = load_systems()
+    systems, system_totals = load_systems()
     entries = parse_list_file()
 
-    total_routes = len(entries)
+    total_list_routes = len(entries)
 
-    # system_file -> set of routes found
-    system_counts = {}
+    # system_file -> set of matched list routes
+    matched_by_system = {}
     missing = []
 
     for region, route in entries:
@@ -80,20 +84,27 @@ def validate():
 
         system_file = systems[key]["file"]
 
-        if system_file not in system_counts:
-            system_counts[system_file] = set()
+        matched_by_system.setdefault(system_file, set()).add(
+            f"{region} {route}"
+        )
 
-        system_counts[system_file].add(f"{region} {route}")
+    print(f"\nTotal routes in list: {total_list_routes}\n")
 
-    # ----- OUTPUT -----
+    print("System coverage:")
+    for system_file in sorted(system_totals):
+        matched = len(matched_by_system.get(system_file, set()))
+        total = system_totals[system_file]
 
-    print(f"\nTotal routes in list: {total_routes}\n")
+        if total > 0:
+            coverage = (matched / total) * 100
+        else:
+            coverage = 0.0
 
-    print("Routes per system:")
-    for system_file in sorted(system_counts):
-        count = len(system_counts[system_file])
-        percent = (count / total_routes) * 100
-        print(f"  {system_file:15} {count:3d} routes  ({percent:5.1f}%)")
+        print(
+            f"  {system_file:10} "
+            f"{matched:4d} / {total:4d} routes "
+            f"({coverage:6.2f}%)"
+        )
 
     if missing:
         print("\n❌ Missing routes:")
