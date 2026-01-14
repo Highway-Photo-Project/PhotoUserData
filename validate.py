@@ -10,6 +10,7 @@ def load_systems():
     """
     Load all _systems/*.csv files.
     Keyed by (region, display_name)
+
     """
     systems = {}
 
@@ -23,6 +24,9 @@ def load_systems():
             for row in reader:
                 if len(row) < 3:
                     continue
+
+
+
 
                 route_code = row[0].strip()      # I10
                 region = row[1].strip()          # AL
@@ -97,3 +101,7 @@ def validate():
             print(" ", m)
     else:
         print("\n✅ All routes found in systems")
+
+
+if __name__ == "__main__":
+    validate()
