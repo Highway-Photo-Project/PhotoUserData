@@ -2,9 +2,9 @@ import os
 import csv
 from tabulate import tabulate
 
-# -------------------------
+# --------------------------------------------------
 # Paths
-# -------------------------
+# --------------------------------------------------
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -14,98 +14,151 @@ SYSTEMS_INDEX = os.path.join(BASE_DIR, "..", "PhotoData", "systems.csv")
 
 HTML_OUT = os.path.join(BASE_DIR, "system_coverage.html")
 
-# -------------------------
-# Load systems
-# -------------------------
+# --------------------------------------------------
+# Load system route definitions
+# --------------------------------------------------
 
 def load_systems():
+    """
+    Returns:
+      systems:
+        (region, display) -> {
+            "file": system_file,
+            "route_code": route_code
+        }
+
+      system_routes:
+        system_file -> set(route_code)
+        (deduplicated by route code ONLY)
+    """
     systems = {}
-    system_totals = {}
+    system_routes = {}
 
     for filename in os.listdir(SYSTEMS_DIR):
         if not filename.endswith(".csv"):
             continue
 
-        system_totals[filename] = 0
         path = os.path.join(SYSTEMS_DIR, filename)
+        system_routes[filename] = set()
 
         with open(path, newline="", encoding="utf-8") as f:
             reader = csv.reader(f, delimiter=";")
-            next(reader, None)
+            next(reader, None)  # header
 
             for row in reader:
                 if len(row) < 3:
                     continue
 
+                route_code = row[0].strip()
                 region = row[1].strip()
                 display = row[2].strip()
 
-                systems[(region, display)] = filename
-                system_totals[filename] += 1
+                systems[(region, display)] = {
+                    "file": filename,
+                    "route_code": route_code
+                }
 
-    return systems, system_totals
+                # FINAL RULE:
+                # Count each route designation only once per system
+                system_routes[filename].add(route_code)
+
+    return systems, system_routes
+
+# --------------------------------------------------
+# Parse .list file
+# --------------------------------------------------
 
 def parse_list_file():
     entries = []
+
     with open(LIST_FILE, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
+
             try:
                 region, route = line.split(maxsplit=1)
                 entries.append((region, route))
             except ValueError:
                 pass
+
     return entries
 
+# --------------------------------------------------
+# Load system display names
+# --------------------------------------------------
+
 def load_system_name_map():
+    """
+    systems.csv:
+      System;Country;Name;Tier
+    """
     name_map = {}
+
     with open(SYSTEMS_INDEX, newline="", encoding="utf-8") as f:
         reader = csv.reader(f, delimiter=";")
         next(reader, None)
+
         for row in reader:
             if len(row) < 3:
                 continue
-            name_map[row[0].strip()] = row[2].strip()
+
+            system_code = row[0].strip()
+            full_name = row[2].strip()
+            name_map[system_code] = full_name
+
     return name_map
 
-# -------------------------
-# HSL color calculation
-# -------------------------
+# --------------------------------------------------
+# Travel Mapping–style HSL coloring
+# --------------------------------------------------
 
 def completion_to_hsl(percent):
     """
-    Replicates Travel Mapping style coloring.
-    0% = red, 100% = green.
+    Replicates Travel Mapping table coloring.
+
+    0%   -> red
+    100% -> green
+
+    TM-style parameters:
+      hue: 0–150
+      saturation: 70%
+      lightness: 80%
     """
     max_hue = 150.0
     hue = percent * max_hue / 100.0
-    return f"hsl({hue:.2f}, 70%, 80%)"
+    return f"hsl({hue:.6f}, 70%, 80%)"
 
-# -------------------------
+# --------------------------------------------------
 # Main validation
-# -------------------------
+# --------------------------------------------------
 
 def validate():
-    systems, system_totals = load_systems()
+    systems, system_routes = load_systems()
     system_names = load_system_name_map()
     entries = parse_list_file()
 
-    matched_by_system = {}
+    matched_routes = {}
 
+    # Track matched route codes (deduped)
     for region, route in entries:
         key = (region, route)
         if key not in systems:
             continue
-        system_file = systems[key]
-        matched_by_system.setdefault(system_file, set()).add(key)
+
+        info = systems[key]
+        system_file = info["file"]
+        route_code = info["route_code"]
+
+        matched_routes.setdefault(system_file, set()).add(route_code)
 
     # Build system summary
     summary = []
 
-    for system_file, total in system_totals.items():
-        matched = len(matched_by_system.get(system_file, set()))
+    for system_file, route_codes in system_routes.items():
+        total = len(route_codes)
+        matched = len(matched_routes.get(system_file, set()))
         pct = (matched / total * 100) if total else 0.0
 
         system_code = system_file.replace(".csv", "")
@@ -113,10 +166,13 @@ def validate():
 
         summary.append((system_name, matched, total, pct))
 
-    # Sort by completion (like TM often does)
+    # Sort like Travel Mapping (highest completion first)
     summary.sort(key=lambda r: r[3], reverse=True)
 
-    # Console table
+    # --------------------------------------------------
+    # Console output
+    # --------------------------------------------------
+
     print("\nSystem coverage:")
     print(tabulate(
         [(s, m, t, f"{p:.2f}%") for s, m, t, p in summary],
@@ -124,19 +180,34 @@ def validate():
         tablefmt="github"
     ))
 
-    # HTML output
+    # --------------------------------------------------
+    # HTML output (TM-style)
+    # --------------------------------------------------
+
     with open(HTML_OUT, "w", encoding="utf-8") as f:
         f.write("""<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
-<title>System Coverage</title>
+<title>Highway System Completion</title>
 <style>
-body { font-family: Arial, sans-serif; }
-table { border-collapse: collapse; width: 100%; }
-th, td { border: 1px solid #ccc; padding: 6px; }
-th { background: #eee; }
-td.num { text-align: right; }
+body {
+  font-family: Arial, sans-serif;
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+th, td {
+  border: 1px solid #ccc;
+  padding: 6px 8px;
+}
+th {
+  background: #eee;
+}
+td.num {
+  text-align: right;
+}
 </style>
 </head>
 <body>
@@ -172,9 +243,9 @@ td.num { text-align: right; }
 
     print(f"\n📄 HTML report written to: {HTML_OUT}")
 
-# -------------------------
+# --------------------------------------------------
 # Entry point
-# -------------------------
+# --------------------------------------------------
 
 if __name__ == "__main__":
     validate()
