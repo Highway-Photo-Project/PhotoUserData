@@ -78,7 +78,6 @@ def validate():
 
     total_list_routes = len(entries)
 
-    # system_file -> set of matched list routes
     matched_by_system = {}
     missing = []
 
@@ -90,37 +89,38 @@ def validate():
             continue
 
         system_file = systems[key]["file"]
-
         matched_by_system.setdefault(system_file, set()).add(
             f"{region} {route}"
         )
 
-    print(f"\nTotal routes in list: {total_list_routes}\n")
+    print(f"\nTotal routes in list: {total_list_routes}")
 
+    # ---- TABLE OUTPUT (this replaces the old print loop) ----
     rows = []
 
-for system_file in sorted(system_totals):
-    matched = len(matched_by_system.get(system_file, set()))
-    total = system_totals[system_file]
-    coverage = (matched / total * 100) if total else 0.0
+    for system_file in sorted(system_totals):
+        matched = len(matched_by_system.get(system_file, set()))
+        total = system_totals[system_file]
+        coverage = (matched / total * 100) if total else 0.0
 
-    rows.append([
-        system_file,
-        matched,
-        total,
-        f"{coverage:.2f}%"
-    ])
+        rows.append([
+            system_file,
+            matched,
+            total,
+            f"{coverage:.2f}%"
+        ])
 
-print("\nSystem coverage:")
-print(tabulate(
-    rows,
-    headers=["System", "Matched", "Total", "Coverage"],
-    tablefmt="github"
-))
+    print("\nSystem coverage:")
+    print(tabulate(
+        rows,
+        headers=["System", "Matched", "Total", "Coverage"],
+        tablefmt="github"
+    ))
+    # ---- END TABLE OUTPUT ----
 
     if missing:
         print("\n❌ Missing routes:")
-        for m in missing:
+        for m in sorted(missing):
             print(" ", m)
     else:
         print("\n✅ All routes found in systems")
