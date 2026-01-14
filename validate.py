@@ -27,6 +27,9 @@ def load_systems():
 
         with open(path, newline="", encoding="utf-8") as f:
             reader = csv.reader(f, delimiter=";")
+
+            next(reader, None)
+
             for row in reader:
                 if len(row) < 3:
                     continue
