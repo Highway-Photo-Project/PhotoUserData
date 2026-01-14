@@ -10,6 +10,7 @@ def load_systems():
     """
     Loads all _systems CSV files.
 
+
     Returns:
       systems: (region, display_name) -> { file, code }
       system_totals: system_file -> total routes in that system
@@ -25,24 +26,24 @@ def load_systems():
         system_totals[filename] = 0
 
         with open(path, newline="", encoding="utf-8") as f:
-    reader = csv.reader(f, delimiter=";")
+            reader = csv.reader(f, delimiter=";")
+            for row in reader:
+                if len(row) < 3:
+                    continue
 
-    next(reader, None)  # ⬅️ skip header row
+                route_code = row[0].strip()
+                region = row[1].strip()
+                display = row[2].strip()
 
-    for row in reader:
-        if len(row) < 3:
-            continue
 
-        route_code = row[0].strip()
-        region = row[1].strip()
-        display = row[2].strip()
 
-        systems[(region, display)] = {
-            "file": filename,
-            "code": route_code
-        }
 
-        system_totals[filename] += 1
+                systems[(region, display)] = {
+                    "file": filename,
+                    "code": route_code
+                }
+
+                system_totals[filename] += 1
 
     return systems, system_totals
 
