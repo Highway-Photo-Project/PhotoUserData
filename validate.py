@@ -5,7 +5,7 @@ from tabulate import tabulate
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 LIST_FILE = os.path.join(BASE_DIR, "list_files", "TBKS1.list")
 SYSTEMS_DIR = os.path.join(BASE_DIR, "..", "PhotoData", "_systems")
-SYSTEMS_INDEX = os.path.join(BASE_DIR, "systems.csv")
+SYSTEMS_INDEX = os.path.join(BASE_DIR, "..", "PhotoData", "systems.csv")
 
 
 def load_systems():
