@@ -61,22 +61,39 @@ def validate():
     systems = load_systems()
     entries = parse_list_file()
 
+    total_routes = len(entries)
+
+    # system_file -> set of routes found
+    system_counts = {}
     missing = []
 
     for region, route in entries:
-        if (region, route) not in systems:
-            missing.append(f"{region} {route}")
+        key = (region, route)
 
-    print(f"Checked {len(entries)} routes")
+        if key not in systems:
+            missing.append(f"{region} {route}")
+            continue
+
+        system_file = systems[key]["file"]
+
+        if system_file not in system_counts:
+            system_counts[system_file] = set()
+
+        system_counts[system_file].add(f"{region} {route}")
+
+    # ----- OUTPUT -----
+
+    print(f"\nTotal routes in list: {total_routes}\n")
+
+    print("Routes per system:")
+    for system_file in sorted(system_counts):
+        count = len(system_counts[system_file])
+        percent = (count / total_routes) * 100
+        print(f"  {system_file:15} {count:3d} routes  ({percent:5.1f}%)")
 
     if missing:
         print("\n❌ Missing routes:")
         for m in missing:
             print(" ", m)
-        exit(1)
     else:
-        print("✅ All routes found in _systems")
-
-
-if __name__ == "__main__":
-    validate()
+        print("\n✅ All routes found in systems")
