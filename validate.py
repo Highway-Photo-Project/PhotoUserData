@@ -117,12 +117,16 @@ def load_system_name_map():
 def completion_to_hsl(percent):
     """
     Completion-based color scale:
-      0%   -> hsl(0,   70%, 80%)
-      100% -> hsl(240, 70%, 80%)
+      0%   -> hsl(0,   80%, 80%)
+      100% -> hsl(240, 80%, 80%)
     """
-    max_hue = 240.0
-    hue = percent * max_hue / 100.0
-    return f"hsl({hue:.6f}, 70%, 80%)"
+    percent = max(0.0, min(100.0, percent))  # clamp
+
+    hue = percent * 240.0 / 100.0
+    saturation = 80
+    lightness = 80
+
+    return f"hsl({hue:.6f}, {saturation}%, {lightness}%)"
 
 # --------------------------------------------------
 # HTML report writer
