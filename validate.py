@@ -1,5 +1,6 @@
 import os
 import csv
+from tabulate import tabulate
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 LIST_FILE = os.path.join(BASE_DIR, "list_files", "TBKS1.list")
