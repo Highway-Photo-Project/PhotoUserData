@@ -3,7 +3,7 @@ import csv
 from tabulate import tabulate
 
 # -------------------------
-# Paths (adjust as needed)
+# Paths
 # -------------------------
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -12,10 +12,10 @@ LIST_FILE = os.path.join(BASE_DIR, "list_files", "TBKS1.list")
 SYSTEMS_DIR = os.path.join(BASE_DIR, "..", "PhotoData", "_systems")
 SYSTEMS_INDEX = os.path.join(BASE_DIR, "..", "PhotoData", "systems.csv")
 
-HTML_OUT = os.path.join(BASE_DIR, "coverage.html")
+HTML_OUT = os.path.join(BASE_DIR, "system_coverage.html")
 
 # -------------------------
-# Load system route files
+# Load systems
 # -------------------------
 
 def load_systems():
@@ -26,8 +26,8 @@ def load_systems():
         if not filename.endswith(".csv"):
             continue
 
-        path = os.path.join(SYSTEMS_DIR, filename)
         system_totals[filename] = 0
+        path = os.path.join(SYSTEMS_DIR, filename)
 
         with open(path, newline="", encoding="utf-8") as f:
             reader = csv.reader(f, delimiter=";")
@@ -37,15 +37,10 @@ def load_systems():
                 if len(row) < 3:
                     continue
 
-                route_code = row[0].strip()
                 region = row[1].strip()
                 display = row[2].strip()
 
-                systems[(region, display)] = {
-                    "file": filename,
-                    "code": route_code
-                }
-
+                systems[(region, display)] = filename
                 system_totals[filename] += 1
 
     return systems, system_totals
@@ -72,142 +67,101 @@ def load_system_name_map():
         for row in reader:
             if len(row) < 3:
                 continue
-            system_code = row[0].strip()
-            full_name = row[2].strip()
-            name_map[system_code] = full_name
+            name_map[row[0].strip()] = row[2].strip()
     return name_map
 
 # -------------------------
-# Color scale helper
+# HSL color calculation
 # -------------------------
 
-def coverage_class(coverage_pct):
+def completion_to_hsl(percent):
     """
-    Chooses a CSS class based on coverage %.
-    High = green, medium = yellow/orange, low = red.
+    Replicates Travel Mapping style coloring.
+    0% = red, 100% = green.
     """
-    if coverage_pct >= 90:
-        return "cov-90"
-    if coverage_pct >= 75:
-        return "cov-75"
-    if coverage_pct >= 50:
-        return "cov-50"
-    if coverage_pct >= 25:
-        return "cov-25"
-    return "cov-0"
+    max_hue = 150.0
+    hue = percent * max_hue / 100.0
+    return f"hsl({hue:.2f}, 70%, 80%)"
+
+# -------------------------
+# Main validation
+# -------------------------
 
 def validate():
     systems, system_totals = load_systems()
     system_names = load_system_name_map()
     entries = parse_list_file()
 
-    total_list_routes = len(entries)
     matched_by_system = {}
-    route_rows = []
 
     for region, route in entries:
         key = (region, route)
         if key not in systems:
-            route_rows.append((region, route, "UNKNOWN"))
             continue
-        system_file = systems[key]["file"]
-        matched_by_system.setdefault(system_file, set()).add(f"{region} {route}")
-        system_code = system_file.replace(".csv", "")
-        system_name = system_names.get(system_code, system_code)
-        route_rows.append((region, route, system_name))
+        system_file = systems[key]
+        matched_by_system.setdefault(system_file, set()).add(key)
 
-    # Compute system coverage
-    system_coverage = {}
-    for system_file in system_totals:
+    # Build system summary
+    summary = []
+
+    for system_file, total in system_totals.items():
         matched = len(matched_by_system.get(system_file, set()))
-        total = system_totals[system_file]
-        coverage_pct = (matched / total * 100) if total else 0.0
+        pct = (matched / total * 100) if total else 0.0
 
         system_code = system_file.replace(".csv", "")
         system_name = system_names.get(system_code, system_code)
-        system_coverage[system_name] = coverage_pct
 
-    # ---- Console summary ----
-    rows = []
-    for system_file in sorted(system_totals):
-        matched = len(matched_by_system.get(system_file, set()))
-        total = system_totals[system_file]
-        coverage_pct = (matched / total * 100) if total else 0.0
-        system_code = system_file.replace(".csv", "")
-        system_name = system_names.get(system_code, system_code)
-        rows.append([
-            system_name,
-            matched,
-            total,
-            f"{coverage_pct:.2f}%"
-        ])
+        summary.append((system_name, matched, total, pct))
 
+    # Sort by completion (like TM often does)
+    summary.sort(key=lambda r: r[3], reverse=True)
+
+    # Console table
     print("\nSystem coverage:")
-    print(tabulate(rows, headers=["System", "Matched", "Total", "Coverage"], tablefmt="github"))
+    print(tabulate(
+        [(s, m, t, f"{p:.2f}%") for s, m, t, p in summary],
+        headers=["System", "Matched", "Total", "Completion"],
+        tablefmt="github"
+    ))
 
-    # ---- Write HTML ----
+    # HTML output
     with open(HTML_OUT, "w", encoding="utf-8") as f:
-        f.write(f"""<!DOCTYPE html>
+        f.write("""<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
-<title>Route Coverage</title>
+<title>System Coverage</title>
 <style>
-body {{
-    font-family: Arial, sans-serif;
-}}
-table {{
-    border-collapse: collapse;
-    width: 100%;
-}}
-th, td {{
-    border: 1px solid #ccc;
-    padding: 6px;
-}}
-th {{
-    background: #f2f2f2;
-}}
-
-/* color scale similar to TravelMapping completion style */
-.cov-90 {{ background: #4CAF50; color: white; }}   /* ~90–100% */
-.cov-75 {{ background: #8BC34A; }}                 /* ~75–89% */
-.cov-50 {{ background: #FFEB3B; }}                 /* ~50–74% */
-.cov-25 {{ background: #FF9800; }}                 /* ~25–49% */
-.cov-0  {{ background: #F44336; color: white; }}   /* 0–24% */
+body { font-family: Arial, sans-serif; }
+table { border-collapse: collapse; width: 100%; }
+th, td { border: 1px solid #ccc; padding: 6px; }
+th { background: #eee; }
+td.num { text-align: right; }
 </style>
 </head>
 <body>
 
-<h1>Route Coverage Report</h1>
-
-<h2>Legend</h2>
-<ul>
-<li class='cov-90'>90–100% complete</li>
-<li class='cov-75'>75–89% complete</li>
-<li class='cov-50'>50–74% complete</li>
-<li class='cov-25'>25–49% complete</li>
-<li class='cov-0'>0–24% complete</li>
-</ul>
+<h1>Highway System Completion</h1>
 
 <table>
 <tr>
-  <th>Region</th>
-  <th>Route</th>
   <th>System</th>
-  <th>System Completion</th>
+  <th>Matched</th>
+  <th>Total</th>
+  <th>Completion</th>
 </tr>
 """)
 
-        for region, route, system in route_rows:
-            cov_pct = system_coverage.get(system, 0)
-            css_class = coverage_class(cov_pct)
+        for system, matched, total, pct in summary:
+            color = completion_to_hsl(pct)
             f.write(
-                f"<tr class='{css_class}'>"
-                f"<td>{region}</td>"
-                f"<td>{route}</td>"
+                "<tr>"
                 f"<td>{system}</td>"
-                f"<td>{cov_pct:.1f}%</td>"
-                f"</tr>\n"
+                f"<td class='num'>{matched}</td>"
+                f"<td class='num'>{total}</td>"
+                f"<td class='num' style='background-color: {color};' "
+                f"data-sort='{pct:.2f}'>{pct:.2f}%</td>"
+                "</tr>\n"
             )
 
         f.write("""
@@ -216,7 +170,11 @@ th {{
 </html>
 """)
 
-    print(f"\nHTML report written to: {HTML_OUT}")
+    print(f"\n📄 HTML report written to: {HTML_OUT}")
+
+# -------------------------
+# Entry point
+# -------------------------
 
 if __name__ == "__main__":
     validate()
