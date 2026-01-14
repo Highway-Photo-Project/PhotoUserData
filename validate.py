@@ -6,6 +6,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 LIST_FILE = os.path.join(BASE_DIR, "list_files", "TBKS1.list")
 SYSTEMS_DIR = os.path.join(BASE_DIR, "..", "PhotoData", "_systems")
 SYSTEMS_INDEX = os.path.join(BASE_DIR, "..", "PhotoData", "systems.csv")
+HTML_OUT = os.path.join(BASE_DIR, "coverage.html")
 
 
 def load_systems():
@@ -156,3 +157,59 @@ def validate():
 
 if __name__ == "__main__":
     validate()
+
+    for region, route in entries:
+    key = (region, route)
+
+    if key not in systems:
+        route_rows.append((region, route, "UNKNOWN", "Missing"))
+        continue
+
+    system_file = systems[key]["file"]
+    system_code = system_file.replace(".csv", "")
+    system_name = system_names.get(system_code, system_code)
+
+    route_rows.append((region, route, system_name, "Matched"))
+
+    with open(HTML_OUT, "w", encoding="utf-8") as f:
+    f.write("""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Route Coverage</title>
+<style>
+body { font-family: Arial, sans-serif; }
+table { border-collapse: collapse; width: 100%; }
+th, td { border: 1px solid #ccc; padding: 4px 8px; }
+th { background: #eee; }
+.matched { background-color: #d4edda; }
+.missing { background-color: #f8d7da; }
+</style>
+</head>
+<body>
+<h1>Route Coverage</h1>
+<table>
+<tr>
+  <th>Region</th>
+  <th>Route</th>
+  <th>System</th>
+  <th>Status</th>
+</tr>
+""")
+
+    for region, route, system, status in route_rows:
+        css_class = "matched" if status == "Matched" else "missing"
+        f.write(
+            f"<tr class='{css_class}'>"
+            f"<td>{region}</td>"
+            f"<td>{route}</td>"
+            f"<td>{system}</td>"
+            f"<td>{status}</td>"
+            f"</tr>\n"
+        )
+
+    f.write("""
+</table>
+</body>
+</html>
+""")
