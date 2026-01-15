@@ -199,7 +199,7 @@ body {{
 
 table {{
   border-collapse: collapse;
-  width: 75%;
+  width: 50%;
 }}
 
 th, td {{
