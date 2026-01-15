@@ -78,13 +78,16 @@ def load_regions():
 
         with open(path, newline="", encoding="utf-8") as f:
             reader = csv.reader(f, delimiter=";")
-            next(reader, None)
+            next(reader, None)  # header
 
             for row in reader:
-                if len(row) < 2:
+                # Expecting at least: system / region / route
+                if len(row) < 3:
                     continue
 
-                route_name = row[1].strip()
+                route_name = row[2].strip()
+
+                # Deduplicate by route designation ONLY
                 region_routes[region].add(route_name)
 
     return region_routes
