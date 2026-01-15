@@ -10,27 +10,24 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 LIST_DIR = os.path.join(BASE_DIR, "list_files")
 OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
+
 SYSTEMS_DIR = os.path.join(BASE_DIR, "..", "PhotoData", "_systems")
+REGIONS_DIR = os.path.join(BASE_DIR, "..", "PhotoData", "_regions")
 SYSTEMS_INDEX = os.path.join(BASE_DIR, "..", "PhotoData", "systems.csv")
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # --------------------------------------------------
-# Load system route definitions
+# Load highway systems inventory
 # --------------------------------------------------
 
 def load_systems():
     """
     Returns:
       systems:
-        (region, route_name) -> {
-            "file": system_file,
-            "route_code": route_name
-        }
-
+        (region, route_name) -> system_file
       system_routes:
         system_file -> set(route_name)
-        (deduplicated by route designation ONLY)
     """
     systems = {}
     system_routes = {}
@@ -44,7 +41,7 @@ def load_systems():
 
         with open(path, newline="", encoding="utf-8") as f:
             reader = csv.reader(f, delimiter=";")
-            next(reader, None)  # header
+            next(reader, None)
 
             for row in reader:
                 if len(row) < 3:
@@ -53,16 +50,44 @@ def load_systems():
                 region = row[1].strip()
                 route_name = row[2].strip()
 
-                systems[(region, route_name)] = {
-                    "file": filename,
-                    "route_code": route_name
-                }
-
-                # FINAL RULE:
-                # Count each route designation once per system
+                systems[(region, route_name)] = filename
                 system_routes[filename].add(route_name)
 
     return systems, system_routes
+
+# --------------------------------------------------
+# Load region/state inventories
+# --------------------------------------------------
+
+def load_regions():
+    """
+    Returns:
+      region_routes:
+        region_code -> set(route_name)
+    """
+    region_routes = {}
+
+    for filename in os.listdir(REGIONS_DIR):
+        if not filename.endswith(".csv"):
+            continue
+
+        region = os.path.splitext(filename)[0]
+        path = os.path.join(REGIONS_DIR, filename)
+
+        region_routes[region] = set()
+
+        with open(path, newline="", encoding="utf-8") as f:
+            reader = csv.reader(f, delimiter=";")
+            next(reader, None)
+
+            for row in reader:
+                if len(row) < 2:
+                    continue
+
+                route_name = row[1].strip()
+                region_routes[region].add(route_name)
+
+    return region_routes
 
 # --------------------------------------------------
 # Parse a .list file
@@ -90,10 +115,6 @@ def parse_list_file(path):
 # --------------------------------------------------
 
 def load_system_name_map():
-    """
-    systems.csv:
-      System;Country;Name;Tier
-    """
     name_map = {}
 
     with open(SYSTEMS_INDEX, newline="", encoding="utf-8") as f:
@@ -111,76 +132,78 @@ def load_system_name_map():
     return name_map
 
 # --------------------------------------------------
-# Travel Mapping–style HSL coloring
+# Completion → HSL color
 # --------------------------------------------------
 
 def completion_to_hsl(percent):
-    """
-    Completion-based color scale:
-      0%   -> hsl(0,   80%, 80%)
-      100% -> hsl(240, 80%, 80%)
-    """
-    percent = max(0.0, min(100.0, percent))  # clamp
-
+    percent = max(0.0, min(100.0, percent))
     hue = percent * 240.0 / 100.0
-    saturation = 80
-    lightness = 80
-
-    return f"hsl({hue:.6f}, {saturation}%, {lightness}%)"
+    return f"hsl({hue:.6f}, 80%, 80%)"
 
 # --------------------------------------------------
 # HTML report writer
 # --------------------------------------------------
 
-def write_html_report(user_id, summary, html_out):
+def write_html_report(title, label, summary, html_out):
     with open(html_out, "w", encoding="utf-8") as f:
         f.write(f"""<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
-<title>{user_id} – Highway System Completion</title>
+<title>{title}</title>
+
 <style>
-body {{
-  font-family: Arial, sans-serif;
+@font-face {{
+  font-family: "ModeNine";
+  src: url("../fonts/ModeNine-Regular.woff2") format("woff2"),
+       url("../fonts/ModeNine-Regular.woff") format("woff");
 }}
+
+body {{
+  font-family: "ModeNine", Arial, sans-serif;
+}}
+
 table {{
   border-collapse: collapse;
   width: 100%;
 }}
+
 th, td {{
   border: 1px solid #ccc;
   padding: 6px 8px;
 }}
+
 th {{
   background: #eee;
 }}
+
 td.num {{
   text-align: right;
+  font-variant-numeric: tabular-nums;
 }}
 </style>
 </head>
 <body>
 
-<h1>{user_id} – Highway System Completion</h1>
+<h1>{title}</h1>
 
 <table>
 <tr>
-  <th>System</th>
+  <th>{label}</th>
   <th>Matched</th>
   <th>Total</th>
   <th>Completion</th>
 </tr>
 """)
 
-        for system, matched, total, pct in summary:
+        for name, matched, total, pct in summary:
             color = completion_to_hsl(pct)
             f.write(
                 "<tr>"
-                f"<td>{system}</td>"
+                f"<td>{name}</td>"
                 f"<td class='num'>{matched}</td>"
                 f"<td class='num'>{total}</td>"
-                f"<td class='num' style='background-color: {color};' "
-                f"data-sort='{pct:.2f}'>{pct:.2f}%</td>"
+                f"<td class='num' style='background-color: {color};'>{pct:.2f}%</td>"
                 "</tr>\n"
             )
 
@@ -196,6 +219,7 @@ td.num {{
 
 def validate_all():
     systems, system_routes = load_systems()
+    region_routes = load_regions()
     system_names = load_system_name_map()
 
     for filename in sorted(os.listdir(LIST_DIR)):
@@ -204,46 +228,93 @@ def validate_all():
 
         user_id = os.path.splitext(filename)[0]
         list_path = os.path.join(LIST_DIR, filename)
-        html_out = os.path.join(OUTPUT_DIR, f"{user_id}.html")
 
         entries = parse_list_file(list_path)
-        matched_routes = {}
+
+        # ---------------- Systems ----------------
+
+        matched_by_system = {}
 
         for region, route in entries:
             key = (region, route)
             if key not in systems:
                 continue
 
-            info = systems[key]
-            system_file = info["file"]
-            route_code = info["route_code"]
+            system_file = systems[key]
+            matched_by_system.setdefault(system_file, set()).add(route)
 
-            matched_routes.setdefault(system_file, set()).add(route_code)
+        system_summary = []
 
-        summary = []
-
-        for system_file, route_codes in system_routes.items():
-            total = len(route_codes)
-            matched = len(matched_routes.get(system_file, set()))
+        for system_file, routes in system_routes.items():
+            total = len(routes)
+            matched = len(matched_by_system.get(system_file, set()))
             pct = (matched / total * 100) if total else 0.0
 
             system_code = system_file.replace(".csv", "")
             system_name = system_names.get(system_code, system_code)
 
-            summary.append((system_name, matched, total, pct))
+            system_summary.append((system_name, matched, total, pct))
 
-        summary.sort(key=lambda r: r[3], reverse=True)
+        system_summary.sort(key=lambda r: r[3], reverse=True)
 
-        # Console output (per user)
+        # ---------------- Regions ----------------
+
+        matched_by_region = {}
+
+        for region, route in entries:
+            if region not in region_routes:
+                continue
+
+            if route in region_routes[region]:
+                matched_by_region.setdefault(region, set()).add(route)
+
+        region_summary = []
+
+        for region, routes in region_routes.items():
+            total = len(routes)
+            matched = len(matched_by_region.get(region, set()))
+            pct = (matched / total * 100) if total else 0.0
+
+            region_summary.append((region, matched, total, pct))
+
+        region_summary.sort(key=lambda r: r[3], reverse=True)
+
+        # ---------------- Output ----------------
+
+        systems_html = os.path.join(OUTPUT_DIR, f"{user_id}_systems.html")
+        regions_html = os.path.join(OUTPUT_DIR, f"{user_id}_regions.html")
+
+        write_html_report(
+            title=f"{user_id} – Highway System Completion",
+            label="System",
+            summary=system_summary,
+            html_out=systems_html
+        )
+
+        write_html_report(
+            title=f"{user_id} – State Completion",
+            label="State",
+            summary=region_summary,
+            html_out=regions_html
+        )
+
+        # Console summary
         print(f"\nUser: {user_id}")
+        print("Systems:")
         print(tabulate(
-            [(s, m, t, f"{p:.2f}%") for s, m, t, p in summary],
+            [(s, m, t, f"{p:.2f}%") for s, m, t, p in system_summary],
             headers=["System", "Matched", "Total", "Completion"],
             tablefmt="github"
         ))
+        print("Regions:")
+        print(tabulate(
+            [(r, m, t, f"{p:.2f}%") for r, m, t, p in region_summary],
+            headers=["State", "Matched", "Total", "Completion"],
+            tablefmt="github"
+        ))
 
-        write_html_report(user_id, summary, html_out)
-        print(f"📄 HTML report written to: {html_out}")
+        print(f"📄 {systems_html}")
+        print(f"📄 {regions_html}")
 
 # --------------------------------------------------
 # Entry point
