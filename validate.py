@@ -14,6 +14,7 @@ OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
 SYSTEMS_DIR = os.path.join(BASE_DIR, "..", "PhotoData", "_systems")
 REGIONS_DIR = os.path.join(BASE_DIR, "..", "PhotoData", "_regions")
 SYSTEMS_INDEX = os.path.join(BASE_DIR, "..", "PhotoData", "systems.csv")
+REGIONS_INDEX = os.path.join(BASE_DIR, "..", "PhotoData", "regions.csv")
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
@@ -92,6 +93,28 @@ def load_regions():
 
     return region_routes
 
+def load_region_name_map():
+    """
+    regions.csv format:
+      Region;Country;Name
+    """
+    name_map = {}
+
+    with open(REGIONS_INDEX, newline="", encoding="utf-8") as f:
+        reader = csv.reader(f, delimiter=";")
+        next(reader, None)  # header
+
+        for row in reader:
+            if len(row) < 3:
+                continue
+
+            region_code = row[0].strip()
+            full_name = row[2].strip()
+
+            name_map[region_code] = full_name
+
+    return name_map
+    
 # --------------------------------------------------
 # Parse a .list file
 # --------------------------------------------------
