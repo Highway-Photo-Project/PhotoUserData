@@ -101,15 +101,11 @@ def load_region_name_map():
     name_map = {}
 
     with open(REGIONS_INDEX, newline="", encoding="utf-8") as f:
-        reader = csv.reader(f, delimiter=";")
-        next(reader, None)  # header
+        reader = csv.DictReader(f, delimiter=";")
 
         for row in reader:
-            if len(row) < 3:
-                continue
-
-            region_code = row[0].strip()
-            full_name = row[2].strip()
+            region_code = row["Region"].strip()
+            full_name = row["Name"].strip()
 
             name_map[region_code] = full_name
 
