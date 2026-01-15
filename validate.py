@@ -95,18 +95,30 @@ def load_regions():
 
 def load_region_name_map():
     """
-    regions.csv format:
-      Region;Country;Name
+    Loads region abbreviation -> full name mapping from regions.csv
+    Header names are auto-detected to avoid KeyError.
     """
     name_map = {}
 
     with open(REGIONS_INDEX, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter=";")
 
-        for row in reader:
-            region_code = row["Region"].strip()
-            full_name = row["Name"].strip()
+        # Normalize header names
+        fieldnames = {h.lower(): h for h in reader.fieldnames}
 
+        # Detect columns safely
+        code_col = fieldnames.get("region") or fieldnames.get("code") or fieldnames.get("abbrev")
+        name_col = fieldnames.get("name") or fieldnames.get("state")
+
+        if not code_col or not name_col:
+            raise RuntimeError(
+                f"regions.csv must contain columns for region code and name. "
+                f"Found headers: {reader.fieldnames}"
+            )
+
+        for row in reader:
+            region_code = row[code_col].strip()
+            full_name = row[name_col].strip()
             name_map[region_code] = full_name
 
     return name_map
