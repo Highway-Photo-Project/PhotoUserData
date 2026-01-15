@@ -247,6 +247,7 @@ def validate_all():
     systems, system_routes = load_systems()
     region_routes = load_regions()
     system_names = load_system_name_map()
+    region_names = load_region_name_map()
 
     for filename in sorted(os.listdir(LIST_DIR)):
         if not filename.endswith(".list"):
@@ -300,6 +301,8 @@ def validate_all():
             total = len(routes)
             matched = len(matched_by_region.get(region, set()))
             pct = (matched / total * 100) if total else 0.0
+
+            display_name = region_names.get(region, region)
 
             region_summary.append((region, matched, total, pct))
 
