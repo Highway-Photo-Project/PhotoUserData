@@ -199,7 +199,7 @@ body {{
 
 table {{
   border-collapse: collapse;
-  width: 100%;
+  width: 75%;
 }}
 
 th, td {{
@@ -224,7 +224,7 @@ td.num {{
 <table>
 <tr>
   <th>{label}</th>
-  <th>Matched</th>
+  <th>Caught</th>
   <th>Total</th>
   <th>Completion</th>
 </tr>
