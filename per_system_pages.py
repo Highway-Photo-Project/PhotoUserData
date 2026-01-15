@@ -10,6 +10,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 LIST_DIR = os.path.join(BASE_DIR, "list_files")
 OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
 SYSTEMS_DIR = os.path.join(BASE_DIR, "..", "PhotoData", "_systems")
+SYSTEMS_INDEX = os.path.join(BASE_DIR, "..", "PhotoData", "systems.csv")
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
@@ -60,10 +61,10 @@ def parse_list_file(path):
 # Load routes from a system CSV
 # --------------------------------------------------
 
-def load_system_routes(system_csv):
+def load_system_routes(system_csv, system_tier):
     """
     Returns:
-      list of (region, route)
+      list of (tier, region, route)
     """
     routes = []
 
@@ -77,10 +78,10 @@ def load_system_routes(system_csv):
 
             region = row[1].strip()
             route = row[2].strip()
-            routes.append((region, route))
+            routes.append((system_tier, region, route))
 
     return routes
-
+    
 def load_routes_by_state(system_csv):
     """
     Returns:
@@ -102,14 +103,45 @@ def load_routes_by_state(system_csv):
 
     return routes
 
+def load_system_tiers():
+    """
+    Returns:
+      system_code -> tier (int)
+    """
+    tiers = {}
+
+    with open(SYSTEMS_INDEX, newline="", encoding="utf-8") as f:
+        reader = csv.reader(f, delimiter=";")
+        next(reader, None)
+
+        for row in reader:
+            if len(row) < 4:
+                continue
+
+            system_code = row[0].strip()
+            try:
+                tier = int(row[3])
+            except ValueError:
+                tier = 999  # fallback
+
+            tiers[system_code] = tier
+
+    return tiers
+    
 # --------------------------------------------------
 # HTML writers
 # --------------------------------------------------
 
 BASE_STYLE = """
 <style>
+@font-face {
+  font-family: "ModeNine";
+  src: url("../fonts/ModeNine-Regular.woff2") format("woff2"),
+       url("../fonts/ModeNine-Regular.woff") format("woff");
+}
+
 body {
-  font-family: Arial, sans-serif;
+  font-family: "ModeNine", Arial, sans-serif;
 }
 
 table {
@@ -164,9 +196,9 @@ def write_system_page(user, system_name, routes, listed_routes, out_path):
 </tr>
 """)
 
-        for region, route in sorted(
+        for tier, region, route in sorted(
             routes,
-            key=lambda r: (r[0], natural_key(r[1]))
+            key=lambda r: (r[0], r[1], natural_key(r[2]))
         ):
             key = (region, route)
             url = listed_routes.get(key)
@@ -252,6 +284,8 @@ def generate_pages():
         if not list_file.endswith(".list"):
             continue
 
+        system_tiers = load_system_tiers()
+
         user = os.path.splitext(list_file)[0]
         list_path = os.path.join(LIST_DIR, list_file)
         listed_routes = parse_list_file(list_path)
@@ -274,7 +308,10 @@ def generate_pages():
             system_name = system_csv.replace(".csv", "")
             system_path = os.path.join(SYSTEMS_DIR, system_csv)
 
-            routes = load_system_routes(system_path)
+            system_code = system_csv.replace(".csv", "")
+            tier = system_tiers.get(system_code, 999)
+
+            routes = load_system_routes(system_path, tier)
             out_html = os.path.join(systems_out, f"{system_name}.html")
 
             write_system_page(
