@@ -136,11 +136,15 @@ def parse_list_file(path):
             if not line or line.startswith("#"):
                 continue
 
-            try:
-                region, route = line.split(maxsplit=1)
-                entries.append((region, route))
-            except ValueError:
-                pass
+            parts = line.split(maxsplit=2)
+            if len(parts) < 2:
+                continue
+
+            region = parts[0]
+            route = parts[1]
+            url = parts[2] if len(parts) > 2 else None
+
+            entries.append((region, route, url))
 
     return entries
 
