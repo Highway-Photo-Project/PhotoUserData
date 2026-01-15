@@ -146,7 +146,7 @@ body {
 
 table {
   border-collapse: collapse;
-  width: 100%;
+  width: 50%;
   table-layout: fixed;
 }
 
@@ -160,11 +160,11 @@ th {
 }
 
 tr.yes {
-  background-color: #e6f6e6;
+  background-color: #97ff79;
 }
 
 tr.no {
-  background-color: #fbeaea;
+  background-color: #ff5555;
 }
 
 td.status {
