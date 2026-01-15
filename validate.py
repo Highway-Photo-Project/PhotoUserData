@@ -304,7 +304,7 @@ def validate_all():
 
             display_name = region_names.get(region, region)
 
-            region_summary.append((region, matched, total, pct))
+            region_summary.append((display_name, matched, total, pct))
 
         region_summary.sort(key=lambda r: r[3], reverse=True)
 
