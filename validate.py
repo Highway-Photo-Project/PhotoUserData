@@ -274,7 +274,7 @@ def validate_all():
 
         matched_by_system = {}
 
-        for region, route, _ in entries::
+        for region, route, _ in entries:
             key = (region, route)
             if key not in systems:
                 continue
@@ -300,7 +300,7 @@ def validate_all():
 
         matched_by_region = {}
 
-        for region, route, _ in entries::
+        for region, route, _ in entries:
             if region not in region_routes:
                 continue
 
