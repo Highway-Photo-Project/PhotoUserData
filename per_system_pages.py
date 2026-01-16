@@ -1,36 +1,17 @@
 import os
 import csv
-import re
 
-# --------------------------------------------------
-# Paths
-# --------------------------------------------------
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 LIST_DIR = os.path.join(BASE_DIR, "list_files")
 OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
+
 SYSTEMS_DIR = os.path.join(BASE_DIR, "..", "PhotoData", "_systems")
-SYSTEMS_INDEX = os.path.join(BASE_DIR, "..", "PhotoData", "systems.csv")
+REGIONS_DIR = os.path.join(BASE_DIR, "..", "PhotoData", "_regions")
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# --------------------------------------------------
-# Helpers
-# --------------------------------------------------
-
-def natural_key(text):
-    """
-    Human-friendly sorting:
-    I-2 < I-10 < I-100
-    """
-    return [
-        int(part) if part.isdigit() else part
-        for part in re.split(r"(\d+)", text)
-    ]
-
-# --------------------------------------------------
-# Parse .list file
-# --------------------------------------------------
 
 def parse_list_file(path):
     """
@@ -57,14 +38,39 @@ def parse_list_file(path):
 
     return entries
 
-# --------------------------------------------------
-# Load routes from a system CSV
-# --------------------------------------------------
 
-def load_system_routes(system_csv, system_tier):
+def load_region_route_order(region):
+    """
+    Reads _regions/{region}.csv and preserves exact order.
+
+    Returns:
+      list of route names in canonical order
+    """
+    path = os.path.join(REGIONS_DIR, f"{region}.csv")
+    order = []
+
+    if not os.path.exists(path):
+        return order
+
+    with open(path, newline="", encoding="utf-8") as f:
+        reader = csv.reader(f, delimiter=";")
+        next(reader, None)
+
+        for row in reader:
+            if len(row) < 3:
+                continue
+
+            route = row[2].strip()
+            if route not in order:
+                order.append(route)
+
+    return order
+
+
+def load_system_routes(system_csv):
     """
     Returns:
-      list of (tier, region, route)
+      list of (region, route)
     """
     routes = []
 
@@ -78,59 +84,10 @@ def load_system_routes(system_csv, system_tier):
 
             region = row[1].strip()
             route = row[2].strip()
-            routes.append((system_tier, region, route))
-
-    return routes
-    
-def load_routes_by_state(system_csv):
-    """
-    Returns:
-      region -> set(route)
-    """
-    routes = {}
-
-    with open(system_csv, newline="", encoding="utf-8") as f:
-        reader = csv.reader(f, delimiter=";")
-        next(reader, None)
-
-        for row in reader:
-            if len(row) < 3:
-                continue
-
-            region = row[1].strip()
-            route = row[2].strip()
-            routes.setdefault(region, set()).add(route)
+            routes.append((region, route))
 
     return routes
 
-def load_system_tiers():
-    """
-    Returns:
-      system_code -> tier (int)
-    """
-    tiers = {}
-
-    with open(SYSTEMS_INDEX, newline="", encoding="utf-8") as f:
-        reader = csv.reader(f, delimiter=";")
-        next(reader, None)
-
-        for row in reader:
-            if len(row) < 4:
-                continue
-
-            system_code = row[0].strip()
-            try:
-                tier = int(row[3])
-            except ValueError:
-                tier = 999  # fallback
-
-            tiers[system_code] = tier
-
-    return tiers
-    
-# --------------------------------------------------
-# HTML writers
-# --------------------------------------------------
 
 BASE_STYLE = """
 <style>
@@ -174,7 +131,23 @@ td.status {
 </style>
 """
 
+
 def write_system_page(user, system_name, routes, listed_routes, out_path):
+    # Load route order for each region used
+    region_orders = {}
+    for region, _ in routes:
+        if region not in region_orders:
+            region_orders[region] = load_region_route_order(region)
+
+    def sort_key(item):
+        region, route = item
+        order = region_orders.get(region, [])
+        try:
+            idx = order.index(route)
+        except ValueError:
+            idx = 999999
+        return (region, idx)
+
     with open(out_path, "w", encoding="utf-8") as f:
         f.write(f"""<!DOCTYPE html>
 <html>
@@ -196,10 +169,7 @@ def write_system_page(user, system_name, routes, listed_routes, out_path):
 </tr>
 """)
 
-        for tier, region, route in sorted(
-            routes,
-            key=lambda r: (r[0], r[1], natural_key(r[2]))
-        ):
+        for region, route in sorted(routes, key=sort_key):
             key = (region, route)
             url = listed_routes.get(key)
 
@@ -226,7 +196,10 @@ def write_system_page(user, system_name, routes, listed_routes, out_path):
 </html>
 """)
 
-def write_state_page(user, state, routes, listed_routes, out_path):
+
+def write_state_page(user, state, listed_routes, out_path):
+    routes = load_region_route_order(state)
+
     with open(out_path, "w", encoding="utf-8") as f:
         f.write(f"""<!DOCTYPE html>
 <html>
@@ -248,7 +221,7 @@ def write_state_page(user, state, routes, listed_routes, out_path):
 </tr>
 """)
 
-        for route in sorted(routes, key=natural_key):
+        for route in routes:
             key = (state, route)
             url = listed_routes.get(key)
 
@@ -275,16 +248,11 @@ def write_state_page(user, state, routes, listed_routes, out_path):
 </html>
 """)
 
-# --------------------------------------------------
-# Main generator
-# --------------------------------------------------
 
 def generate_pages():
     for list_file in sorted(os.listdir(LIST_DIR)):
         if not list_file.endswith(".list"):
             continue
-
-        system_tiers = load_system_tiers()
 
         user = os.path.splitext(list_file)[0]
         list_path = os.path.join(LIST_DIR, list_file)
@@ -299,7 +267,7 @@ def generate_pages():
 
         # ---------------- Systems ----------------
 
-        state_aggregate = {}
+        states_seen = set()
 
         for system_csv in sorted(os.listdir(SYSTEMS_DIR)):
             if not system_csv.endswith(".csv"):
@@ -308,10 +276,7 @@ def generate_pages():
             system_name = system_csv.replace(".csv", "")
             system_path = os.path.join(SYSTEMS_DIR, system_csv)
 
-            system_code = system_csv.replace(".csv", "")
-            tier = system_tiers.get(system_code, 999)
-
-            routes = load_system_routes(system_path, tier)
+            routes = load_system_routes(system_path)
             out_html = os.path.join(systems_out, f"{system_name}.html")
 
             write_system_page(
@@ -324,28 +289,21 @@ def generate_pages():
 
             print(f"📄 {out_html}")
 
-            # Aggregate by state
-            by_state = load_routes_by_state(system_path)
-            for state, rts in by_state.items():
-                state_aggregate.setdefault(state, set()).update(rts)
+            for region, _ in routes:
+                states_seen.add(region)
 
-        # ---------------- States ----------------
 
-        for state, routes in sorted(state_aggregate.items()):
+        for state in sorted(states_seen):
             out_html = os.path.join(states_out, f"{state}.html")
             write_state_page(
                 user=user,
                 state=state,
-                routes=routes,
                 listed_routes=listed_routes,
                 out_path=out_html
             )
 
             print(f"📄 {out_html}")
 
-# --------------------------------------------------
-# Entry point
-# --------------------------------------------------
 
 if __name__ == "__main__":
     generate_pages()
