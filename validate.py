@@ -2,9 +2,6 @@ import os
 import csv
 from tabulate import tabulate
 
-# --------------------------------------------------
-# Paths
-# --------------------------------------------------
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -18,9 +15,6 @@ REGIONS_INDEX = os.path.join(BASE_DIR, "..", "PhotoData", "regions.csv")
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# --------------------------------------------------
-# Load highway systems inventory
-# --------------------------------------------------
 
 def load_systems():
     """
@@ -56,9 +50,6 @@ def load_systems():
 
     return systems, system_routes
 
-# --------------------------------------------------
-# Load region/state inventories
-# --------------------------------------------------
 
 def load_regions():
     """
@@ -123,9 +114,6 @@ def load_region_name_map():
 
     return name_map
     
-# --------------------------------------------------
-# Parse a .list file
-# --------------------------------------------------
 
 def parse_list_file(path):
     entries = []
@@ -148,9 +136,6 @@ def parse_list_file(path):
 
     return entries
 
-# --------------------------------------------------
-# Load system display names
-# --------------------------------------------------
 
 def load_system_name_map():
     name_map = {}
@@ -169,18 +154,12 @@ def load_system_name_map():
 
     return name_map
 
-# --------------------------------------------------
-# Completion → HSL color
-# --------------------------------------------------
 
 def completion_to_hsl(percent):
     percent = max(0.0, min(100.0, percent))
     hue = percent * 240.0 / 100.0
     return f"hsl({hue:.6f}, 80%, 80%)"
 
-# --------------------------------------------------
-# HTML report writer
-# --------------------------------------------------
 
 def write_html_report(title, label, summary, html_out):
     with open(html_out, "w", encoding="utf-8") as f:
@@ -251,9 +230,6 @@ td.num {{
 </html>
 """)
 
-# --------------------------------------------------
-# Main multi-user validation
-# --------------------------------------------------
 
 def validate_all():
     systems, system_routes = load_systems()
@@ -270,7 +246,6 @@ def validate_all():
 
         entries = parse_list_file(list_path)
 
-        # ---------------- Systems ----------------
 
         matched_by_system = {}
 
@@ -296,7 +271,6 @@ def validate_all():
 
         system_summary.sort(key=lambda r: r[3], reverse=True)
 
-        # ---------------- Regions ----------------
 
         matched_by_region = {}
 
@@ -320,7 +294,6 @@ def validate_all():
 
         region_summary.sort(key=lambda r: r[3], reverse=True)
 
-        # ---------------- Output ----------------
 
         systems_html = os.path.join(OUTPUT_DIR, f"{user_id}_systems.html")
         regions_html = os.path.join(OUTPUT_DIR, f"{user_id}_regions.html")
@@ -357,9 +330,6 @@ def validate_all():
         print(f"📄 {systems_html}")
         print(f"📄 {regions_html}")
 
-# --------------------------------------------------
-# Entry point
-# --------------------------------------------------
 
 if __name__ == "__main__":
     validate_all()
