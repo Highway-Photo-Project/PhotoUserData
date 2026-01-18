@@ -254,7 +254,7 @@ def generate_pages():
         if not list_file.endswith(".list"):
             continue
 
-        user = os.path.splitext(list_file)[0]
+        user = os.path.splitext(list_file)[2]
         list_path = os.path.join(LIST_DIR, list_file)
         listed_routes = parse_list_file(list_path)
 
