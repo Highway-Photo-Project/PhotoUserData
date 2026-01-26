@@ -178,16 +178,17 @@ def validate_counties():
             for county, routes in county_routes.items():
                 total = len(routes)
                 matched = sum(
-        1 for route in routes
-        if (region, route) in completed_pairs
-    )
+                    1 for route in routes
+                    if (region, route) in completed_pairs
+                )
 
-    pct = (matched / total * 100) if total else 0
-    rows.append((county, total, matched, pct))
+                pct = (matched / total * 100) if total else 0
+                rows.append((county, total, matched, pct))
 
-rows.sort(key=lambda r: r[3], reverse=True)
+            # ✅ rows exists HERE — safe to sort
+            rows.sort(key=lambda r: r[3], reverse=True)
 
-write_state_html(user_dir, user_name, region, rows)
+            write_state_html(user_dir, user_name, region, rows)
 
 
 if __name__ == "__main__":
