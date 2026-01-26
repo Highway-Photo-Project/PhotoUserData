@@ -60,10 +60,13 @@ def load_all_list_routes():
 
 def load_state_counties(path):
     """
+    CSV format:
+      Region;Route;County
+
     Returns:
+      region_code
       county_routes:
         county_name -> set(route)
-      region_code
     """
     county_routes = {}
     region_code = None
@@ -71,10 +74,22 @@ def load_state_counties(path):
     with open(path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter=";")
 
+        # Normalize headers (case-insensitive)
+        headers = {h.lower(): h for h in reader.fieldnames}
+
+        region_col = headers.get("region")
+        route_col = headers.get("route")
+        county_col = headers.get("county")
+
+        if not region_col or not route_col or not county_col:
+            raise RuntimeError(
+                f"{os.path.basename(path)} has unexpected headers: {reader.fieldnames}"
+            )
+
         for row in reader:
-            county = row["County"].strip()
-            region = row["Region"].strip()
-            route = row["Route"].strip()
+            region = row[region_col].strip()
+            route = row[route_col].strip()
+            county = row[county_col].strip()
 
             region_code = region
             county_routes.setdefault(county, set()).add(route)
