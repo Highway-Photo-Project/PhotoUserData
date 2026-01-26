@@ -48,19 +48,27 @@ def load_user_completed_pairs(list_path):
 
 def load_state_counties(csv_path):
     """
-    CSV format:
+    Expected CSV format (with or without header):
       Region;Route;County
     """
     county_routes = defaultdict(set)
     region_code = None
 
     with open(csv_path, newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f, delimiter=";")
+        reader = csv.reader(f, delimiter=";")
 
         for row in reader:
-            region = row["Region"].strip().upper()
-            route = row["Route"].strip().upper()
-            county = row["County"].strip()
+            # skip empty rows
+            if not row or len(row) < 3:
+                continue
+
+            # skip header row if present
+            if row[0].lower() in ("region", "state"):
+                continue
+
+            region = row[0].strip().upper()
+            route = row[1].strip().upper()
+            county = row[2].strip()
 
             region_code = region
             county_routes[county].add(route)
