@@ -5,7 +5,7 @@ from collections import defaultdict
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-LISTS_DIR = os.path.join(SCRIPT_DIR, "lists")
+LISTS_DIR = os.path.join(SCRIPT_DIR, "..", "PhotoUserData", "list_files")
 COUNTY_DATA_DIR = os.path.join(SCRIPT_DIR, "..", "PhotoData", "_counties")
 OUTPUT_ROOT = os.path.join(SCRIPT_DIR, "outputs", "counties")
 FONT_PATH = "ModeNine.ttf"
@@ -26,21 +26,26 @@ def hsl_for_percentage(pct):
 
 def load_user_completed_pairs(list_path):
     """
-    Reads ONE .list file and returns a set of (region, route)
+    Reads a .list file with lines like:
+      AL I-65
+    Returns a set of (region, route)
     """
     completed = set()
 
     with open(list_path, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
-            if not line or "." not in line:
+
+            # skip comments and blanks
+            if not line or line.startswith("#"):
                 continue
 
-            system, route = line.split(".", 1)
-            region = system[-2:].upper()
-            route = route.upper()
+            parts = line.split()
+            if len(parts) != 2:
+                continue
 
-            completed.add((region, route))
+            region, route = parts
+            completed.add((region.upper(), route.upper()))
 
     return completed
 
