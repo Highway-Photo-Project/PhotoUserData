@@ -175,7 +175,7 @@ def validate_counties():
 
             rows = []
 
-                for county, routes in county_routes.items():
+            for county, routes in county_routes.items():
                 total = len(routes)
                 matched = sum(
         1 for route in routes
