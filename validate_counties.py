@@ -28,6 +28,7 @@ def load_user_completed_pairs(list_path):
     """
     Reads a .list file with lines like:
       AL I-65
+      AR I-40 https://example.com/image.jpg
     Returns a set of (region, route)
     """
     completed = set()
@@ -41,11 +42,15 @@ def load_user_completed_pairs(list_path):
                 continue
 
             parts = line.split()
-            if len(parts) != 2:
+
+            # need at least region + route
+            if len(parts) < 2:
                 continue
 
-            region, route = parts
-            completed.add((region.upper(), route.upper()))
+            region = parts[0].upper()
+            route = parts[1].upper()
+
+            completed.add((region, route))
 
     return completed
 
@@ -78,6 +83,8 @@ def load_state_counties(csv_path):
 
     return region_code, county_routes
 
+    # sort by percent complete (descending)
+    rows.sort(key=lambda r: r[3], reverse=True)
 
 def write_state_html(user_dir, user_name, state, rows):
     out_path = os.path.join(user_dir, f"{state}_counties.html")
