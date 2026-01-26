@@ -7,10 +7,10 @@ from collections import defaultdict
 
 LISTS_DIR = "lists"
 COUNTY_DATA_DIR = "../PhotoData/_counties"
-OUTPUT_DIR = "outputs/counties"
-FONT_PATH = "ModeNine.ttf"  # put the font file next to the HTML output
+OUTPUT_ROOT = "outputs/counties"
+FONT_PATH = "ModeNine.ttf"
 
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+os.makedirs(OUTPUT_ROOT, exist_ok=True)
 
 # --------------------------------------- #
 
@@ -26,7 +26,7 @@ def hsl_for_percentage(pct):
 
 def load_user_completed_pairs(list_path):
     """
-    Reads ONE .list file and returns a set of (region, route) pairs
+    Reads ONE .list file and returns a set of (region, route)
     """
     completed = set()
 
@@ -37,7 +37,6 @@ def load_user_completed_pairs(list_path):
                 continue
 
             system, route = line.split(".", 1)
-
             region = system[-2:].upper()
             route = route.upper()
 
@@ -48,7 +47,7 @@ def load_user_completed_pairs(list_path):
 
 def load_state_counties(csv_path):
     """
-    Expected CSV format (with or without header):
+    CSV format (with or without header):
       Region;Route;County
     """
     county_routes = defaultdict(set)
@@ -58,7 +57,6 @@ def load_state_counties(csv_path):
         reader = csv.reader(f, delimiter=";")
 
         for row in reader:
-            # skip empty rows
             if not row or len(row) < 3:
                 continue
 
@@ -76,19 +74,19 @@ def load_state_counties(csv_path):
     return region_code, county_routes
 
 
-def write_state_html(state, rows):
-    out_path = os.path.join(OUTPUT_DIR, f"{state}_counties.html")
+def write_state_html(user_dir, user_name, state, rows):
+    out_path = os.path.join(user_dir, f"{state}_counties.html")
 
     with open(out_path, "w", encoding="utf-8") as f:
         f.write(f"""<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
-<title>{state} County Completion</title>
+<title>{user_name} – {state} County Completion</title>
 <style>
 @font-face {{
   font-family: "ModeNine";
-  src: url("ModeNine.ttf") format("truetype");
+  src: url("../{FONT_PATH}") format("truetype");
 }}
 
 body {{
@@ -117,7 +115,7 @@ td.right {{
 </head>
 <body>
 
-<h2>{state} County Completion</h2>
+<h2>{user_name} – {state} County Completion</h2>
 
 <table>
 <tr>
@@ -151,29 +149,31 @@ td.right {{
 def validate_counties():
     list_files = glob.glob(os.path.join(LISTS_DIR, "*.list"))
 
-    # load all user completions separately
-    user_completed = [
-        load_user_completed_pairs(path)
-        for path in list_files
-    ]
+    for list_path in list_files:
+        user_name = os.path.splitext(os.path.basename(list_path))[0]
+        print(f"Processing user: {user_name}")
 
-    for csv_path in glob.glob(os.path.join(COUNTY_DATA_DIR, "*_counties.csv")):
-        region, county_routes = load_state_counties(csv_path)
+        user_dir = os.path.join(OUTPUT_ROOT, user_name)
+        os.makedirs(user_dir, exist_ok=True)
 
-        rows = []
+        completed_pairs = load_user_completed_pairs(list_path)
 
-        for county, routes in sorted(county_routes.items()):
-            total = len(routes)
-            matched = 0
+        for csv_path in glob.glob(os.path.join(COUNTY_DATA_DIR, "*_counties.csv")):
+            region, county_routes = load_state_counties(csv_path)
 
-            for route in routes:
-                if any((region, route) in user for user in user_completed):
-                    matched += 1
+            rows = []
 
-            pct = (matched / total * 100) if total else 0
-            rows.append((county, total, matched, pct))
+            for county, routes in sorted(county_routes.items()):
+                total = len(routes)
+                matched = sum(
+                    1 for route in routes
+                    if (region, route) in completed_pairs
+                )
 
-        write_state_html(region, rows)
+                pct = (matched / total * 100) if total else 0
+                rows.append((county, total, matched, pct))
+
+            write_state_html(user_dir, user_name, region, rows)
 
 
 if __name__ == "__main__":
