@@ -3,11 +3,11 @@ import os
 import glob
 from collections import defaultdict
 
-# ---------------- CONFIG ---------------- #
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-LISTS_DIR = "lists"
-COUNTY_DATA_DIR = "../PhotoData/_counties"
-OUTPUT_ROOT = "outputs/counties"
+LISTS_DIR = os.path.join(SCRIPT_DIR, "lists")
+COUNTY_DATA_DIR = os.path.join(SCRIPT_DIR, "..", "PhotoData", "_counties")
+OUTPUT_ROOT = os.path.join(SCRIPT_DIR, "outputs", "counties")
 FONT_PATH = "ModeNine.ttf"
 
 os.makedirs(OUTPUT_ROOT, exist_ok=True)
