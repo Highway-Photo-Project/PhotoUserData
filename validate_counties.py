@@ -1,208 +1,172 @@
-import os
 import csv
+import os
+import glob
+from collections import defaultdict
 
-# --------------------------------------------------
-# Paths
-# --------------------------------------------------
+# ---------------- CONFIG ---------------- #
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-LIST_DIR = os.path.join(BASE_DIR, "list_files")
-OUTPUT_DIR = os.path.join(BASE_DIR, "outputs", "counties")
-COUNTIES_DIR = os.path.join(BASE_DIR, "..", "PhotoData", "_counties")
+LISTS_DIR = "lists"
+COUNTY_DATA_DIR = "../PhotoData/_counties"
+OUTPUT_DIR = "outputs/counties"
+FONT_PATH = "ModeNine.ttf"  # put the font file next to the HTML output
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# --------------------------------------------------
-# Utilities
-# --------------------------------------------------
+# --------------------------------------- #
 
-def completion_to_hsl(percent):
-    percent = max(0.0, min(100.0, percent))
-    hue = percent * 240.0 / 100.0
-    return f"hsl({hue:.6f}, 80%, 80%)"
 
-# --------------------------------------------------
-# Parse .list files (ALL users combined)
-# --------------------------------------------------
-
-def load_all_list_routes():
+def hsl_for_percentage(pct):
     """
-    Returns:
-      region -> set(route)
+    0%   -> hsl(0, 80%, 80%)
+    100% -> hsl(240, 80%, 80%)
     """
-    routes_by_region = {}
+    hue = (pct / 100) * 240
+    return f"hsl({hue:.2f}, 80%, 80%)"
 
-    for filename in os.listdir(LIST_DIR):
-        if not filename.endswith(".list"):
-            continue
 
-        path = os.path.join(LIST_DIR, filename)
+def load_user_completed_pairs(list_path):
+    """
+    Reads ONE .list file and returns a set of (region, route) pairs
+    """
+    completed = set()
 
-        with open(path, encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if not line or line.startswith("#"):
-                    continue
+    with open(list_path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or "." not in line:
+                continue
 
-                try:
-                    region, route = line.split(maxsplit=1)
-                except ValueError:
-                    continue
+            system, route = line.split(".", 1)
 
-                routes_by_region.setdefault(region, set()).add(route)
+            region = system[-2:].upper()
+            route = route.upper()
 
-    return routes_by_region
+            completed.add((region, route))
 
-# --------------------------------------------------
-# Load county inventory for one state
-# --------------------------------------------------
+    return completed
 
-def load_state_counties(path):
+
+def load_state_counties(csv_path):
     """
     CSV format:
       Region;Route;County
-
-    Returns:
-      region_code
-      county_routes:
-        county_name -> set(route)
     """
-    county_routes = {}
+    county_routes = defaultdict(set)
     region_code = None
 
-    with open(path, newline="", encoding="utf-8") as f:
+    with open(csv_path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter=";")
 
-        # Normalize headers (case-insensitive)
-        headers = {h.lower(): h for h in reader.fieldnames}
-
-        region_col = headers.get("region")
-        route_col = headers.get("route")
-        county_col = headers.get("county")
-
-        if not region_col or not route_col or not county_col:
-            raise RuntimeError(
-                f"{os.path.basename(path)} has unexpected headers: {reader.fieldnames}"
-            )
-
         for row in reader:
-            region = row[region_col].strip()
-            route = row[route_col].strip()
-            county = row[county_col].strip()
+            region = row["Region"].strip().upper()
+            route = row["Route"].strip().upper()
+            county = row["County"].strip()
 
             region_code = region
-            county_routes.setdefault(county, set()).add(route)
+            county_routes[county].add(route)
 
     return region_code, county_routes
 
-# --------------------------------------------------
-# HTML writer
-# --------------------------------------------------
 
-def write_county_html(state, county_summary, html_out):
-    with open(html_out, "w", encoding="utf-8") as f:
+def write_state_html(state, rows):
+    out_path = os.path.join(OUTPUT_DIR, f"{state}_counties.html")
+
+    with open(out_path, "w", encoding="utf-8") as f:
         f.write(f"""<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
-<title>{state} – County Completion</title>
-
+<title>{state} County Completion</title>
 <style>
-body {{
-  font-family: Arial, sans-serif;
+@font-face {{
+  font-family: "ModeNine";
+  src: url("ModeNine.ttf") format("truetype");
 }}
 
-.table-container {{
-  max-width: 1000px;
-  margin: 0 auto;
+body {{
+  font-family: ModeNine, sans-serif;
 }}
 
 table {{
   border-collapse: collapse;
-  width: auto;
+  margin-left: 0;
+  width: 700px;
 }}
 
 th, td {{
-  border: 1px solid #ccc;
-  padding: 6px 8px;
+  border: 1px solid #444;
+  padding: 6px 10px;
 }}
 
 th {{
-  background: #eee;
+  background-color: #ddd;
 }}
 
-td.num {{
+td.right {{
   text-align: right;
-  white-space: nowrap;
 }}
 </style>
 </head>
 <body>
 
-<h1>{state} – County Completion</h1>
+<h2>{state} County Completion</h2>
 
-<div class="table-container">
 <table>
 <tr>
   <th>County</th>
-  <th>Matched</th>
-  <th>Total</th>
-  <th>Completion</th>
+  <th>Total Routes</th>
+  <th>Completed</th>
+  <th>Percent</th>
 </tr>
 """)
 
-        for county, matched, total, pct in county_summary:
-            color = completion_to_hsl(pct)
-            f.write(
-                "<tr>"
-                f"<td>{county}</td>"
-                f"<td class='num'>{matched}</td>"
-                f"<td class='num'>{total}</td>"
-                f"<td class='num' style='background-color: {color};'>{pct:.2f}%</td>"
-                "</tr>\n"
-            )
+        for county, total, matched, pct in rows:
+            color = hsl_for_percentage(pct)
+            f.write(f"""
+<tr>
+  <td>{county}</td>
+  <td class="right">{total}</td>
+  <td class="right">{matched}</td>
+  <td class="right" style="background-color: {color};" data-sort="{pct:.2f}">
+    {pct:.2f}%
+  </td>
+</tr>
+""")
 
         f.write("""
 </table>
-</div>
 </body>
 </html>
 """)
 
-# --------------------------------------------------
-# Main
-# --------------------------------------------------
 
 def validate_counties():
-    user_routes = load_all_list_routes()
+    list_files = glob.glob(os.path.join(LISTS_DIR, "*.list"))
 
-    for filename in sorted(os.listdir(COUNTIES_DIR)):
-        if not filename.endswith("_counties.csv"):
-            continue
+    # load all user completions separately
+    user_completed = [
+        load_user_completed_pairs(path)
+        for path in list_files
+    ]
 
-        state = filename.replace("_counties.csv", "")
-        path = os.path.join(COUNTIES_DIR, filename)
+    for csv_path in glob.glob(os.path.join(COUNTY_DATA_DIR, "*_counties.csv")):
+        region, county_routes = load_state_counties(csv_path)
 
-        region_code, county_routes = load_state_counties(path)
-        user_state_routes = user_routes.get(region_code, set())
+        rows = []
 
-        county_summary = []
-
-        for county, routes in county_routes.items():
+        for county, routes in sorted(county_routes.items()):
             total = len(routes)
-            matched = len(routes & user_state_routes)
-            pct = (matched / total * 100) if total else 0.0
-            county_summary.append((county, matched, total, pct))
+            matched = 0
 
-        county_summary.sort(key=lambda r: r[3], reverse=True)
+            for route in routes:
+                if any((region, route) in user for user in user_completed):
+                    matched += 1
 
-        html_out = os.path.join(OUTPUT_DIR, f"{state}_counties.html")
-        write_county_html(state, county_summary, html_out)
+            pct = (matched / total * 100) if total else 0
+            rows.append((county, total, matched, pct))
 
-        print(f"📄 {html_out}")
+        write_state_html(region, rows)
 
-# --------------------------------------------------
 
 if __name__ == "__main__":
     validate_counties()
