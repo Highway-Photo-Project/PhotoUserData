@@ -12,6 +12,8 @@ SYSTEMS_DIR = os.path.join(BASE_DIR, "..", "PhotoData", "_systems")
 REGIONS_DIR = os.path.join(BASE_DIR, "..", "PhotoData", "_regions")
 SYSTEMS_INDEX = os.path.join(BASE_DIR, "..", "PhotoData", "systems.csv")
 REGIONS_INDEX = os.path.join(BASE_DIR, "..", "PhotoData", "regions.csv")
+STATE_BASE_URL = "https://tbks1.neocities.org/TBKS1/states"
+
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
@@ -161,7 +163,7 @@ def completion_to_hsl(percent):
     return f"hsl({hue:.6f}, 80%, 80%)"
 
 
-def write_html_report(title, label, summary, html_out):
+def write_html_report(title, label, summary, html_out, link_map=None):
     with open(html_out, "w", encoding="utf-8") as f:
         f.write(f"""<!DOCTYPE html>
 <html>
@@ -198,6 +200,11 @@ td.num {{
   text-align: right;
   font-variant-numeric: tabular-nums;
 }}
+
+a {{
+  color: inherit;
+  text-decoration: underline;
+}}
 </style>
 </head>
 <body>
@@ -215,9 +222,15 @@ td.num {{
 
         for name, matched, total, pct in summary:
             color = completion_to_hsl(pct)
+
+            if link_map and name in link_map:
+                name_cell = f"<a href='{link_map[name]}'>{name}</a>"
+            else:
+                name_cell = name
+
             f.write(
                 "<tr>"
-                f"<td>{name}</td>"
+                f"<td>{name_cell}</td>"
                 f"<td class='num'>{matched}</td>"
                 f"<td class='num'>{total}</td>"
                 f"<td class='num' style='background-color: {color};'>{pct:.2f}%</td>"
@@ -231,11 +244,16 @@ td.num {{
 """)
 
 
+
 def validate_all():
     systems, system_routes = load_systems()
     region_routes = load_regions()
     system_names = load_system_name_map()
     region_names = load_region_name_map()
+    region_link_map = {
+    full_name: f"{STATE_BASE_URL}/{code}"
+    for code, full_name in region_names.items()
+}
 
     for filename in sorted(os.listdir(LIST_DIR)):
         if not filename.endswith(".list"):
@@ -310,6 +328,7 @@ def validate_all():
             label="State",
             summary=region_summary,
             html_out=regions_html
+            link_map=region_link_map
         )
 
         # Console summary
