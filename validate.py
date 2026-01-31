@@ -327,7 +327,7 @@ def validate_all():
             title=f"{user_id} – State Completion",
             label="State",
             summary=region_summary,
-            html_out=regions_html
+            html_out=regions_html,
             link_map=region_link_map
         )
 
