@@ -10,15 +10,15 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      steps:
+        - name: Checkout PhotoUserData
+          uses: actions/checkout@v4
 
-      - name: Checkout PhotoData
-        uses: actions/checkout@v4
-        with:
-          repository: Highway-Photo-Project/PhotoData
-          path: PhotoData
+        - name: Checkout PhotoData
+          uses: actions/checkout@v4
+          with:
+            repository: Highway-Photo-Project/PhotoData
+            path: PhotoData
           
       - name: Set up Python
         uses: actions/setup-python@v5
