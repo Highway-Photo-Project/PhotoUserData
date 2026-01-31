@@ -21,9 +21,11 @@ jobs:
       - name: Install dependencies
         run: |
 
-      - name: Generate HTML
+       - name: Generate HTML
         run: |
-          python generate_html.py          # your script
+        python validate.py
+        python validate_counties.py
+        python per_system_pages.py
 
       - name: Deploy to Neocities
         uses: bcomnes/deploy-to-neocities@v3
