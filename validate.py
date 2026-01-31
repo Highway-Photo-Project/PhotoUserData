@@ -324,27 +324,26 @@ def validate_all():
     region_routes = load_regions()
     system_names = load_system_name_map()
     region_names = load_region_name_map()
-    region_link_map = {
-    full_name: f"{state_base_url}/{code}"
-    for code, full_name in region_names.items()
-}
 
     for filename in sorted(os.listdir(LIST_DIR)):
         if not filename.endswith(".list"):
             continue
 
         user_id = os.path.splitext(filename)[0]
-        state_base_url = f"https://tbks1.neocities.org/{user_id}/states"
         list_path = os.path.join(LIST_DIR, filename)
 
+        # Per-user base URL
+        state_base_url = f"https://tbks1.neocities.org/{user_id}/states"
+
+        # Build region link map AFTER base URL exists
         region_link_map = {
-     full_name: f"{state_base_url}/{code}"
-    for code, full_name in region_names.items()
-}
+            full_name: f"{state_base_url}/{code}"
+            for code, full_name in region_names.items()
+        }
 
         entries = parse_list_file(list_path)
 
-
+        # ---- Systems ----
         matched_by_system = {}
 
         for region, route, _ in entries:
@@ -369,7 +368,7 @@ def validate_all():
 
         system_summary.sort(key=lambda r: r[3], reverse=True)
 
-
+        # ---- Regions ----
         matched_by_region = {}
 
         for region, route, _ in entries:
@@ -387,12 +386,11 @@ def validate_all():
             pct = (matched / total * 100) if total else 0.0
 
             display_name = region_names.get(region, region)
-
             region_summary.append((display_name, matched, total, pct))
 
         region_summary.sort(key=lambda r: r[3], reverse=True)
 
-
+        # ---- Output ----
         user_dir = os.path.join(USERS_OUTPUT_DIR, user_id)
         os.makedirs(user_dir, exist_ok=True)
 
@@ -414,7 +412,7 @@ def validate_all():
             link_map=region_link_map
         )
 
-        # Console summary
+        # ---- Console output ----
         print(f"\nUser: {user_id}")
         print("Systems:")
         print(tabulate(
