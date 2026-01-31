@@ -37,7 +37,7 @@ jobs:
           python validate.py
           python per_system_pages.py
 
-      # 6. Deploy to Neocities via API (recursively, preserves folder structure)
+      # 6. Deploy to Neocities via API (recursively, files only)
       - name: Deploy to Neocities via API
         env:
           NEOCITIES_KEY: ${{ secrets.NEOCITIES_KEY }}
@@ -46,7 +46,8 @@ jobs:
           cd outputs
           find . -type f | while read file; do
             echo "Uploading $file..."
-            curl -v -u "api:key-$NEOCITIES_KEY" \
+            # Use tbks1 username + API key for authentication
+            curl -v -u "TBKS1:$NEOCITIES_KEY" \
                  -F "file=@$file" \
                  https://neocities.org/api/upload
           done
