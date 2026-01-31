@@ -37,14 +37,15 @@ jobs:
           python validate.py
           python per_system_pages.py
 
-      # 6. Download and use Neocities CLI to deploy
-      - name: Deploy to Neocities
+      # 6. Deploy to Neocities via HTTP API
+      - name: Deploy to Neocities via API
         env:
           NEOCITIES_KEY: ${{ secrets.NEOCITIES_KEY }}
         run: |
-          # Download official Neocities CLI Linux binary
-          curl -L https://github.com/neocities/neocities-cli/releases/download/v0.6.3/neocities-linux-x64 -o neocities
-          chmod +x neocities
-
-          # Deploy the outputs folder
-          ./neocities push outputs/*
+          echo "Uploading all files in outputs folder to Neocities..."
+          for file in outputs/*; do
+            echo "Uploading $file..."
+            curl -s -u "api:key-${NEOCITIES_KEY}" \
+                 -F "file=@$file" \
+                 https://neocities.org/api/upload
+          done
