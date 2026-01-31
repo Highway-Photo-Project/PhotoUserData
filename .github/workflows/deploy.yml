@@ -3,7 +3,7 @@ name: Build and Deploy to Neocities
 on:
   push:
     branches:
-      - main  
+      - main  # Change if your default branch is different
 
 jobs:
   build-and-deploy:
@@ -24,28 +24,22 @@ jobs:
         with:
           python-version: '3.11'
 
-      # 4. Install dependencies
+      # 4. Install Python dependencies
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          pip install tabulate  # Add other packages here if needed
+          pip install tabulate neocities  # Add other packages here if needed
 
-      # 5. Run your Python scripts
+      # 5. Run Python scripts
       - name: Run Python scripts
         run: |
           python validate.py
           python per_system_pages.py
 
-      # 6. Install Neocities CLI
-      - name: Install Neocities CLI
-        run: |
-          curl -L https://github.com/neocities/neocities-cli/releases/latest/download/neocities-cli-linux-x64.tar.gz | tar xz
-          chmod +x neocities
-
-      # 7. Deploy generated HTML to Neocities
+      # 6. Deploy generated HTML to Neocities
       - name: Deploy to Neocities
         env:
           NEOCITIES_KEY: ${{ secrets.NEOCITIES_KEY }}
         run: |
-          ./neocities push output_folder/*  # Replace 'output_folder' with your HTML folder
+          neocities push outputs/*
