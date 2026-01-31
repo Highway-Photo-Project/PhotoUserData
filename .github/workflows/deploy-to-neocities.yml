@@ -1,0 +1,35 @@
+name: Deploy to Neocities
+
+on:
+  push:
+    branches:
+      - main  # or whichever branch you use
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt  # if you have requirements
+
+      - name: Generate HTML
+        run: |
+          python generate_html.py          # your script
+
+      - name: Deploy to Neocities
+        uses: bcomnes/deploy-to-neocities@v3
+        with:
+          api_key: $4057a04b7c8ea2f3f73d22f757bdd3ca
+          dist_dir: site
+          cleanup: true
+          preview_before_deploy: false
