@@ -14,15 +14,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         
-     - name: Clone PhotoData
+      # 2. Clone PhotoData
+      - name: Clone PhotoData
         run: git clone https://github.com/Highway-Photo-Project/PhotoData.git
         
-      # 2. Set up Python
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.13'  # Change if needed
-
       # 3. Install dependencies
       - name: Install dependencies
         run: |
