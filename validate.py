@@ -201,10 +201,15 @@ td.num {{
   font-variant-numeric: tabular-nums;
 }}
 
-a {{
+td a {
+  display: block;
+  width: 100%;
+  height: 100%;
   color: inherit;
   text-decoration: underline;
-}}
+  pointer-events: auto;
+  cursor: pointer;
+}
 </style>
 </head>
 <body>
