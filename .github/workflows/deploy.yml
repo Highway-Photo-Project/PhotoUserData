@@ -37,9 +37,13 @@ jobs:
           python validate.py
           python per_system_pages.py
 
-      # 6. Deploy generated HTML to Neocities
-      - name: Deploy to Neocities
-        env:
-          NEOCITIES_KEY: ${{ secrets.NEOCITIES_KEY }}
-        run: |
+      # 6. Install Node.js and Neocities CLI
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'  # or any LTS version
+
+      - name: Install Neocities CLI
+        run: npm install -g neocities
           neocities push outputs/*
+        
