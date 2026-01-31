@@ -277,6 +277,48 @@ td a {{
 """)
 
 
+def write_user_index(users, html_out):
+    with open(html_out, "w", encoding="utf-8") as f:
+        f.write("""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>User Pages</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+}
+ul {
+  list-style: none;
+  padding: 0;
+}
+li {
+  margin: 6px 0;
+}
+a {
+  text-decoration: underline;
+}
+</style>
+</head>
+<body>
+
+<h1>User Pages</h1>
+<ul>
+""")
+
+        for user in sorted(users):
+            f.write(
+                f"<li>"
+                f"<a href='./{user}/regions.html'>{user}</a>"
+                f"</li>\n"
+            )
+
+        f.write("""
+</ul>
+</body>
+</html>
+""")
+
 
 def validate_all():
     systems, system_routes = load_systems()
