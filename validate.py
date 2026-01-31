@@ -66,7 +66,6 @@ def load_regions():
             continue
 
         region = os.path.splitext(filename)[0]
-        state_base_url = f"https://tbks1.neocities.org/{user_id}/states"
         path = os.path.join(REGIONS_DIR, filename)
 
         region_routes[region] = set()
@@ -335,7 +334,13 @@ def validate_all():
             continue
 
         user_id = os.path.splitext(filename)[0]
+        state_base_url = f"https://tbks1.neocities.org/{user_id}/states"
         list_path = os.path.join(LIST_DIR, filename)
+
+        region_link_map = {
+     full_name: f"{state_base_url}/{code}"
+    for code, full_name in region_names.items()
+}
 
         entries = parse_list_file(list_path)
 
