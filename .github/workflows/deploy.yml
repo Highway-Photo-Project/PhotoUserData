@@ -45,7 +45,7 @@ jobs:
           echo "Uploading all files in outputs folder to Neocities..."
           for file in outputs/*; do
             echo "Uploading $file..."
-            curl -s -u "api:key-${NEOCITIES_KEY}" \
+            curl -s -u "api:key-${37c3d308e8e9b5183ed10aed8ab42d5e}" \
                  -F "file=@$file" \
                  https://neocities.org/api/upload
           done
