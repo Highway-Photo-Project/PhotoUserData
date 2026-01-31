@@ -13,7 +13,6 @@ SYSTEMS_DIR = os.path.join(BASE_DIR, "..", "PhotoData", "_systems")
 REGIONS_DIR = os.path.join(BASE_DIR, "..", "PhotoData", "_regions")
 SYSTEMS_INDEX = os.path.join(BASE_DIR, "..", "PhotoData", "systems.csv")
 REGIONS_INDEX = os.path.join(BASE_DIR, "..", "PhotoData", "regions.csv")
-STATE_BASE_URL = "https://tbks1.neocities.org/TBKS1/states"
 
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -67,6 +66,7 @@ def load_regions():
             continue
 
         region = os.path.splitext(filename)[0]
+        state_base_url = f"https://tbks1.neocities.org/{user_id}/states"
         path = os.path.join(REGIONS_DIR, filename)
 
         region_routes[region] = set()
@@ -326,7 +326,7 @@ def validate_all():
     system_names = load_system_name_map()
     region_names = load_region_name_map()
     region_link_map = {
-    full_name: f"{STATE_BASE_URL}/{code}"
+    full_name: f"{state_base_url}/{code}"
     for code, full_name in region_names.items()
 }
 
