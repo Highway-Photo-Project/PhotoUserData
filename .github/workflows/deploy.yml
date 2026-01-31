@@ -37,20 +37,20 @@ jobs:
           python validate.py
           python per_system_pages.py
 
-      # 6. Set up Node.js
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '20'
-
-      # 7. Install Neocities CLI via npm globally
-      - name: Install Neocities CLI
-        run: npm install -g neocities
-
-      # 8. Add npm global binaries to PATH and deploy
-      - name: Deploy to Neocities
+      # 6. Set up Node.js and deploy to Neocities
+      - name: Install Neocities CLI and Deploy
         env:
           NEOCITIES_KEY: ${{ secrets.NEOCITIES_KEY }}
         run: |
+          # Install Node.js (LTS)
+          curl -sL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+          sudo apt-get install -y nodejs
+
+          # Install Neocities CLI globally
+          npm install -g neocities
+
+          # Ensure npm global binaries are in PATH
           export PATH="$PATH:$(npm bin -g)"
-          neocities push output_folder/*  # replace output_folder with your HTML folder
+
+          # Deploy HTML output
+          neocities push outputs/*  # Replace 'output_folder' with your HTML folder
