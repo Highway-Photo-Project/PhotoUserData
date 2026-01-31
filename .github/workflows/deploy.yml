@@ -37,16 +37,16 @@ jobs:
           python validate.py
           python per_system_pages.py
 
-      # 6. Deploy to Neocities via API (recursively, files only)
+      # 6. Deploy to Neocities via API (recursively, preserves folder structure)
       - name: Deploy to Neocities via API
         env:
           NEOCITIES_KEY: ${{ secrets.NEOCITIES_KEY }}
         run: |
           echo "Uploading all files in outputs folder to Neocities..."
-          # Recursively find all files in outputs folder
-          find outputs -type f | while read file; do
+          cd outputs
+          find . -type f | while read file; do
             echo "Uploading $file..."
-            curl -s -u "api:key-$NEOCITIES_KEY" \
+            curl -v -u "api:key-$NEOCITIES_KEY" \
                  -F "file=@$file" \
                  https://neocities.org/api/upload
           done
