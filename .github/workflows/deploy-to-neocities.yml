@@ -21,6 +21,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt  # if you have requirements
+          tabulate
 
       - name: Generate HTML
         run: |
