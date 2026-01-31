@@ -29,7 +29,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          pip install tabulate  # Add any other packages your scripts need here
+          pip install tabulate  # Add other packages your scripts need here
 
       # 5. Run Python scripts to generate HTML
       - name: Run Python scripts
@@ -37,8 +37,8 @@ jobs:
           python validate.py
           python per_system_pages.py
 
-      # 6. Set up Node.js and deploy to Neocities
-      - name: Install Neocities CLI and Deploy
+      # 6. Set up Node.js and deploy to Neocities using npx
+      - name: Install Node.js and Deploy
         env:
           NEOCITIES_KEY: ${{ secrets.NEOCITIES_KEY }}
         run: |
@@ -46,11 +46,8 @@ jobs:
           curl -sL https://deb.nodesource.com/setup_20.x | sudo -E bash -
           sudo apt-get install -y nodejs
 
-          # Install Neocities CLI globally
-          npm install -g neocities
+          # Install Neocities CLI locally
+          npm install neocities
 
-          # Ensure npm global binaries are in PATH
-          export PATH="$PATH:$(npm bin -g)"
-
-          # Deploy HTML output
-          neocities push outputs/*  # Replace 'output_folder' with your HTML folder
+          # Deploy using npx (runs the local CLI)
+          npx neocities push outputs/*  # Replace 'output_folder' with your HTML folder
