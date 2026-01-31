@@ -187,6 +187,10 @@ table {{
   width: 50%;
 }}
 
+table, tr, td {{
+  position: relative;
+}}
+
 th, td {{
   border: 1px solid #ccc;
   padding: 6px 8px;
@@ -201,7 +205,7 @@ td.num {{
   font-variant-numeric: tabular-nums;
 }}
 
-td a {
+td a {{
   display: block;
   width: 100%;
   height: 100%;
@@ -209,7 +213,7 @@ td a {
   text-decoration: underline;
   pointer-events: auto;
   cursor: pointer;
-}
+}}
 </style>
 </head>
 <body>
@@ -223,6 +227,29 @@ td a {
   <th>Total</th>
   <th>Completion</th>
 </tr>
+""")
+
+        for name, matched, total, pct in summary:
+            color = completion_to_hsl(pct)
+
+            if link_map and name in link_map:
+                name_cell = f"<a href='{link_map[name]}'>{name}</a>"
+            else:
+                name_cell = name
+
+            f.write(
+                "<tr>"
+                f"<td>{name_cell}</td>"
+                f"<td class='num'>{matched}</td>"
+                f"<td class='num'>{total}</td>"
+                f"<td class='num' style='background-color: {color};'>{pct:.2f}%</td>"
+                "</tr>\n"
+            )
+
+        f.write("""
+</table>
+</body>
+</html>
 """)
 
         for name, matched, total, pct in summary:
