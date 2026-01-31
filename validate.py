@@ -349,8 +349,8 @@ def validate_all():
         user_dir = os.path.join(USERS_OUTPUT_DIR, user_id)
         os.makedirs(user_dir, exist_ok=True)
 
-            systems_html = os.path.join(user_dir, "systems.html")
-            regions_html = os.path.join(user_dir, "regions.html")
+        systems_html = os.path.join(user_dir, "systems.html")
+        regions_html = os.path.join(user_dir, "regions.html")
 
         write_html_report(
             title=f"{user_id} – Highway System Completion",
