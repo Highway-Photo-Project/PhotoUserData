@@ -41,14 +41,16 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'  # LTS version
+          node-version: '20'
 
-      # 7. Install Neocities CLI via npm
+      # 7. Install Neocities CLI via npm globally
       - name: Install Neocities CLI
         run: npm install -g neocities
 
-      # 8. Deploy generated HTML to Neocities
+      # 8. Add npm global binaries to PATH and deploy
       - name: Deploy to Neocities
         env:
           NEOCITIES_KEY: ${{ secrets.NEOCITIES_KEY }}
-        run: neocities push outputs/*  # Replace 'output_folder' with your HTML folder
+        run: |
+          export PATH="$PATH:$(npm bin -g)"
+          neocities push output_folder/*  # replace output_folder with your HTML folder
