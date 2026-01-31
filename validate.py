@@ -7,6 +7,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 LIST_DIR = os.path.join(BASE_DIR, "list_files")
 OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
+USERS_OUTPUT_DIR = os.path.join(OUTPUT_DIR, "users")
 
 SYSTEMS_DIR = os.path.join(BASE_DIR, "..", "PhotoData", "_systems")
 REGIONS_DIR = os.path.join(BASE_DIR, "..", "PhotoData", "_regions")
@@ -345,8 +346,11 @@ def validate_all():
         region_summary.sort(key=lambda r: r[3], reverse=True)
 
 
-        systems_html = os.path.join(OUTPUT_DIR, f"{user_id}_systems.html")
-        regions_html = os.path.join(OUTPUT_DIR, f"{user_id}_regions.html")
+        user_dir = os.path.join(USERS_OUTPUT_DIR, user_id)
+            os.makedirs(user_dir, exist_ok=True)
+
+            systems_html = os.path.join(user_dir, "systems.html")
+            regions_html = os.path.join(user_dir, "regions.html")
 
         write_html_report(
             title=f"{user_id} – Highway System Completion",
