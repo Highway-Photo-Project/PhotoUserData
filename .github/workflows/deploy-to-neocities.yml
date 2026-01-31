@@ -3,15 +3,16 @@ name: Deploy to Neocities
 on:
   push:
     branches:
-      - main  # or whichever branch you use
+      - main
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check out repo
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -19,18 +20,21 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: |
+        run: pip install -r requirements.txt
 
-       - name: Generate HTML
+      - name: Generate HTML
         run: |
-        python validate.py
-        python validate_counties.py
-        python per_system_pages.py
+          python validate.py
+          python validate_counties.py
+          python per_system_pages.py
+
+      - name: Prepare site directory
+        run: |
+          mkdir -p site
+          cp -r outputs/* site/
 
       - name: Deploy to Neocities
         uses: bcomnes/deploy-to-neocities@v3
         with:
-          api_key: $4057a04b7c8ea2f3f73d22f757bdd3ca
+          api_key: ${{ secrets.NEOCITIES_API_TOKEN }}
           dist_dir: site
-          cleanup: true
-          preview_before_deploy: false
