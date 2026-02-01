@@ -481,7 +481,7 @@ def validate_all():
         systems_html = os.path.join(user_dir, "systems.html")
         regions_html = os.path.join(user_dir, "regions.html")
 
-          write_leaderboard(
+        write_leaderboard(
             leaderboard,
             os.path.join(OUTPUT_DIR, "index.html")
          )
