@@ -189,11 +189,15 @@ def write_html_report(
     page_type=None
 ):
     with open(html_out, "w", encoding="utf-8") as f:
-        f.write(f"""<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>{title}</title>
+       f.write(f"""
+<table>
+<tr>
+  <th>{label}</th>
+  <th>Caught</th>
+  <th>Total</th>
+  <th>Completion</th>
+</tr>
+""")
 
 <style>
 @font-face {{
@@ -248,16 +252,25 @@ td a {{
 
         if user_id and page_type:
             f.write("<div style='text-align:center; margin: 12px;'>")
-            f.write("<a href='../../leaderboard.html'>Leaderboard</a>")
+            f.write("<a href='../leaderboard.html'>🏆 Leaderboard</a>")
 
             if page_type == "systems":
-                f.write(" | <a href='./regions.html'>State Completion</a>")
+                f.write(" | <a href='./regions.html'>🗺 State Completion</a>")
             elif page_type == "regions":
-                f.write(" | <a href='./systems.html'>System Completion</a>")
+                f.write(" | <a href='./systems.html'>🛣 System Completion</a>")
 
             f.write("</div>\n")
 
-        f.write("""
+        f.write(f"""
+<table>
+<tr>
+  <th>{label}</th>
+  <th>Caught</th>
+  <th>Total</th>
+  <th>Completion</th>
+</tr>
+""")
+
 <table>
 <tr>
   <th>{label}</th>
