@@ -418,8 +418,6 @@ def validate_all():
             display_name = system_names.get(system_code, system_code)
             system_link_map[display_name] = f"{system_base_url}/{system_code}"
 
-        }
-
         entries = parse_list_file(list_path)
 
         # ---- Systems ----
