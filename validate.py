@@ -472,7 +472,7 @@ def validate_all():
 
         write_leaderboard(
         leaderboard,
-        os.path.join(OUTPUT_DIR, "index.html")
+        os.path.join(OUTPUT_DIR, "leaderboard.html")
     )
         # ---- Output ----
         user_dir = os.path.join(USERS_OUTPUT_DIR, user_id)
@@ -483,7 +483,7 @@ def validate_all():
 
         write_leaderboard(
             leaderboard,
-            os.path.join(OUTPUT_DIR, "index.html")
+            os.path.join(OUTPUT_DIR, "leaderboard.html")
          )
 
         write_html_report(
