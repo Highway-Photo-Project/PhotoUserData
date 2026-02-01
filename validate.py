@@ -385,9 +385,10 @@ td.num {
 </html>
 """)
 
-write_leaderboard(leaderboard, os.path.join(OUTPUT_DIR, "index.html"))
+
 
 def validate_all():
+    leaderboard = []
     systems, system_routes = load_systems()
     region_routes = load_regions()
     system_names = load_system_name_map()
@@ -456,6 +457,13 @@ def validate_all():
             display_name = region_names.get(region, region)
             region_summary.append((display_name, matched, total, pct))
 
+            total_routes = sum(t for _, _, t, _ in region_summary)
+            matched_routes = sum(m for _, m, _, _ in region_summary)
+            pct = (matched_routes / total_routes * 100) if total_routes else 0.0
+
+            leaderboard.append((user_id, matched_routes, total_routes, pct))
+            
+
         region_summary.sort(key=lambda r: r[3], reverse=True)
 
         # ---- Output ----
@@ -497,6 +505,11 @@ def validate_all():
 
         print(f"📄 {systems_html}")
         print(f"📄 {regions_html}")
+
+        write_leaderboard(
+            leaderboard,
+            os.path.join(OUTPUT_DIR, "index.html")
+        )
 
 
 if __name__ == "__main__":
