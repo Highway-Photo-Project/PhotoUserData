@@ -157,47 +157,19 @@ def load_system_name_map():
     return name_map
 
 
-def write_nav(f, user_id=None, page_type=None):
-    f.write("<div style='text-align:center; margin: 12px;'>")
-
-    f.write("<a href='../../leaderboard.html'>Leaderboard</a>")
-
-    if user_id and page_type == "regions":
-        f.write(" | ")
-        f.write(f"<a href='./systems.html'>System Completion</a>")
-
-    if user_id and page_type == "systems":
-        f.write(" | ")
-        f.write(f"<a href='./regions.html'>State Completion</a>")
-
-    f.write("</div>\n")
-    
-
 def completion_to_hsl(percent):
     percent = max(0.0, min(100.0, percent))
     hue = percent * 240.0 / 100.0
     return f"hsl({hue:.6f}, 80%, 80%)"
 
 
-def write_html_report(
-    title,
-    label,
-    summary,
-    html_out,
-    link_map=None,
-    user_id=None,
-    page_type=None
-):
+def write_html_report(title, label, summary, html_out, link_map=None):
     with open(html_out, "w", encoding="utf-8") as f:
-       f.write(f"""
-<table>
-<tr>
-  <th>{label}</th>
-  <th>Caught</th>
-  <th>Total</th>
-  <th>Completion</th>
-</tr>
-""")
+        f.write(f"""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>{title}</title>
 
 <style>
 @font-face {{
@@ -248,32 +220,6 @@ td a {{
 <body>
 
 <h1>{title}</h1>
-""")
-
-        if user_id and page_type:
-            f.write("<div style='text-align:center; margin: 12px;'>")
-            f.write("<a href='../leaderboard.html'>🏆 Leaderboard</a>")
-
-            if page_type == "systems":
-                f.write(" | <a href='./regions.html'>🗺 State Completion</a>")
-            elif page_type == "regions":
-                f.write(" | <a href='./systems.html'>🛣 System Completion</a>")
-
-            f.write("</div>\n")
-
-        f.write(f"""
-<table>
-<tr>
-  <th>{label}</th>
-  <th>Caught</th>
-  <th>Total</th>
-  <th>Completion</th>
-</tr>
-""")
-
-<table>
-<tr>
-  <th>{label}</th>
 
 <table>
 <tr>
@@ -422,7 +368,7 @@ td.num {
 </tr>
 """)
 
-        for i, (user, pages, m, t, pct) in enumerate(leaderboard, start=1):
+        for i, (user, m, t, pct) in enumerate(leaderboard, start=1):
             f.write(
                 "<tr>"
                 f"<td class='num'>{i}</td>"
@@ -535,14 +481,9 @@ def validate_all():
             if TOTAL_PROJECT_ROUTES else 0.0
         )
         
-        leaderboard.append((
-            user_id,
-            f"<a href='./users/{user_id}/regions.html'>States</a> | "
-            f"<a href='./users/{user_id}/systems.html'>Systems</a>",
-            matched,
-            total,
-            pct
-        ))
+        leaderboard.append(
+            (user_id, matched_routes, TOTAL_PROJECT_ROUTES, leaderboard_pct)
+        )
 
         write_leaderboard(
         leaderboard,
@@ -554,7 +495,6 @@ def validate_all():
 
         systems_html = os.path.join(user_dir, "systems.html")
         regions_html = os.path.join(user_dir, "regions.html")
-        
 
         write_leaderboard(
             leaderboard,
