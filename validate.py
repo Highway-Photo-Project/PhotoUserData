@@ -172,49 +172,19 @@ def write_html_report(title, label, summary, html_out, link_map=None, nav_links=
 <title>{title}</title>
 
 <style>
-@font-face {{
+@font-face {
   font-family: "ModeNine";
   src: url("../fonts/ModeNine-Regular.woff2") format("woff2"),
        url("../fonts/ModeNine-Regular.woff") format("woff");
-}}
+}
 
-body {{
+body {
   font-family: "ModeNine", Arial, sans-serif;
-}}
+}
 
-table {{
-  border-collapse: collapse;
-  width: 50%;
-  margin: 0 auto;
-}}
-
-table, tr, td {{
-  position: relative;
-}}
-
-th, td {{
-  border: 1px solid #ccc;
-  padding: 6px 8px;
-}}
-
-th {{
-  background: #eee;
-}}
-
-td.num {{
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}}
-
-td a {{
-  display: block;
-  width: 100%;
-  height: 100%;
-  color: inherit;
-  text-decoration: underline;
-  pointer-events: auto;
-  cursor: pointer;
-}}
+h1 {
+  text-align: center;
+}
 
 .nav {
   text-align: center;
@@ -226,7 +196,41 @@ td a {{
   text-decoration: underline;
 }
 
+table {
+  border-collapse: collapse;
+  width: 50%;
+  margin: 0 auto;
+}
+
+table, tr, td {
+  position: relative;
+}
+
+th, td {
+  border: 1px solid #ccc;
+  padding: 6px 8px;
+}
+
+th {
+  background: #eee;
+}
+
+td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+td a {
+  display: block;
+  width: 100%;
+  height: 100%;
+  color: inherit;
+  text-decoration: underline;
+  pointer-events: auto;
+  cursor: pointer;
+}
 </style>
+
 </head>
 <body>
 
