@@ -317,7 +317,7 @@ a {
         for user in sorted(users):
             f.write(
                 f"<li>"
-                f"<a href='./{user}/regions.html'>{user}</a>"
+                f"<a href='./{user}/systems.html'>{user}</a>"
                 f"</li>\n"
             )
 
@@ -372,7 +372,7 @@ td.num {
             f.write(
                 "<tr>"
                 f"<td class='num'>{i}</td>"
-                f"<td><a href='./users/{user}/regions.html'>{user}</a></td>"
+                f"<td><a href='./users/{user}/systems.html'>{user}</a></td>"
                 f"<td class='num'>{m}</td>"
                 f"<td class='num'>{t}</td>"
                 f"<td class='num'>{pct:.2f}%</td>"
