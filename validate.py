@@ -450,6 +450,10 @@ def validate_all():
         region_summary = []
 
         for region, routes in region_routes.items():
+            total_routes = sum(t for _, _, t, _ in region_summary)
+            matched_routes = sum(m for _, m, _, _ in region_summary)
+            pct = (matched_routes / total_routes * 100) if total_routes else 0.0
+            
             total = len(routes)
             matched = len(matched_by_region.get(region, set()))
             pct = (matched / total * 100) if total else 0.0
@@ -457,11 +461,9 @@ def validate_all():
             display_name = region_names.get(region, region)
             region_summary.append((display_name, matched, total, pct))
 
-            total_routes = sum(t for _, _, t, _ in region_summary)
-            matched_routes = sum(m for _, m, _, _ in region_summary)
-            pct = (matched_routes / total_routes * 100) if total_routes else 0.0
-
-            leaderboard.append((user_id, matched_routes, total_routes, pct))
+            leaderboard.append(
+                (user_id, matched_routes, total_routes, pct)
+            )
             
 
         region_summary.sort(key=lambda r: r[3], reverse=True)
