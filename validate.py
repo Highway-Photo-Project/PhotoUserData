@@ -163,7 +163,7 @@ def completion_to_hsl(percent):
     return f"hsl({hue:.6f}, 80%, 80%)"
 
 
-def write_html_report(title, label, summary, html_out, link_map=None):
+def write_html_report(title, label, summary, html_out, link_map=None, nav_links=None):
     with open(html_out, "w", encoding="utf-8") as f:
         f.write(f"""<!DOCTYPE html>
 <html>
@@ -215,9 +215,26 @@ td a {{
   pointer-events: auto;
   cursor: pointer;
 }}
+
+.nav {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.nav a {
+  margin: 0 10px;
+  text-decoration: underline;
+}
+
 </style>
 </head>
 <body>
+
+<div class="nav">
+        if nav_links:
+            for text, href in nav_links:
+                f.write(f"<a href='{href}'>{text}</a>")
+</div>
 
 <h1>{title}</h1>
 
@@ -501,12 +518,23 @@ def validate_all():
             os.path.join(OUTPUT_DIR, "leaderboard.html")
          )
 
+        systems_nav = [
+            ("Regions", "regions.html"),
+            ("Leaderboard", "../../leaderboard.html"),
+        ]
+
+        regions_nav = [
+            ("Systems", "systems.html"),
+            ("Leaderboard", "../../leaderboard.html"),
+        ]    
+
         write_html_report(
             title=f"{user_id} – Highway System Completion",
             label="System",
             summary=system_summary,
             html_out=systems_html,
-            link_map=system_link_map
+            link_map=system_link_map,
+            nav_links=systems_nav
         )
 
         write_html_report(
@@ -514,7 +542,8 @@ def validate_all():
             label="State",
             summary=region_summary,
             html_out=regions_html,
-            link_map=region_link_map
+            link_map=region_link_map,
+            nav_links=regions_nav
         )
 
         # ---- Console output ----
