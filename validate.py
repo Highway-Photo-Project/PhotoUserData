@@ -179,7 +179,15 @@ def completion_to_hsl(percent):
     return f"hsl({hue:.6f}, 80%, 80%)"
 
 
-def write_html_report(title, label, summary, html_out, link_map=None):
+def write_html_report(
+    title,
+    label,
+    summary,
+    html_out,
+    link_map=None,
+    user_id=None,
+    page_type=None
+):
     with open(html_out, "w", encoding="utf-8") as f:
         f.write(f"""<!DOCTYPE html>
 <html>
@@ -236,6 +244,23 @@ td a {{
 <body>
 
 <h1>{title}</h1>
+""")
+
+        if user_id and page_type:
+            f.write("<div style='text-align:center; margin: 12px;'>")
+            f.write("<a href='../../leaderboard.html'>Leaderboard</a>")
+
+            if page_type == "systems":
+                f.write(" | <a href='./regions.html'>State Completion</a>")
+            elif page_type == "regions":
+                f.write(" | <a href='./systems.html'>System Completion</a>")
+
+            f.write("</div>\n")
+
+        f.write("""
+<table>
+<tr>
+  <th>{label}</th>
 
 <table>
 <tr>
@@ -515,9 +540,7 @@ def validate_all():
         os.makedirs(user_dir, exist_ok=True)
 
         systems_html = os.path.join(user_dir, "systems.html")
-        write_nav(f, user_id=user, page_type="systems")
         regions_html = os.path.join(user_dir, "regions.html")
-        write_nav(f, user_id=user, page_type="regions")
         
 
         write_leaderboard(
