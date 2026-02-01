@@ -499,7 +499,7 @@ def validate_all():
             title=f"{user_id} – Highway System Completion",
             label="System",
             summary=system_summary,
-            html_out=systems_html
+            html_out=systems_html,
             link_map=system_link_map
         )
 
