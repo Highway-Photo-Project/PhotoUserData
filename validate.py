@@ -411,9 +411,13 @@ def validate_all():
             for code, full_name in region_names.items()
         }
 
-        system_link_map = {
-            system_names.get(code, code): f"{system_base_url}/{code}"
-            for code in system_routes.keys()
+        system_link_map = {}
+
+            for system_file in system_routes.keys():
+                system_code = system_file.replace(".csv", "")
+                display_name = system_names.get(system_code, system_code)
+                system_link_map[display_name] = f"{system_base_url}/{system_code}"
+
         }
 
         entries = parse_list_file(list_path)
