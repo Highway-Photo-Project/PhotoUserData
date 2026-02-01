@@ -246,6 +246,29 @@ td a {{
                 "</tr>\n"
             )
 
+        # close once, correctly
+        f.write("""
+</table>
+</body>
+</html>
+""")
+        for name, matched, total, pct in summary:
+            color = completion_to_hsl(pct)
+
+            if link_map and name in link_map:
+                name_cell = f"<a href='{link_map[name]}'>{name}</a>"
+            else:
+                name_cell = name
+
+            f.write(
+                "<tr>"
+                f"<td>{name_cell}</td>"
+                f"<td class='num'>{matched}</td>"
+                f"<td class='num'>{total}</td>"
+                f"<td class='num' style='background-color: {color};'>{pct:.2f}%</td>"
+                "</tr>\n"
+            )
+
         f.write("""
 </table>
 </body>
