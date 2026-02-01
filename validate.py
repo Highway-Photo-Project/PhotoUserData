@@ -157,6 +157,22 @@ def load_system_name_map():
     return name_map
 
 
+def write_nav(f, user_id=None, page_type=None):
+    f.write("<div style='text-align:center; margin: 12px;'>")
+
+    f.write("<a href='../../leaderboard.html'>Leaderboard</a>")
+
+    if user_id and page_type == "regions":
+        f.write(" | ")
+        f.write(f"<a href='./systems.html'>System Completion</a>")
+
+    if user_id and page_type == "systems":
+        f.write(" | ")
+        f.write(f"<a href='./regions.html'>State Completion</a>")
+
+    f.write("</div>\n")
+    
+
 def completion_to_hsl(percent):
     percent = max(0.0, min(100.0, percent))
     hue = percent * 240.0 / 100.0
@@ -481,9 +497,14 @@ def validate_all():
             if TOTAL_PROJECT_ROUTES else 0.0
         )
         
-        leaderboard.append(
-            (user_id, matched_routes, TOTAL_PROJECT_ROUTES, leaderboard_pct)
-        )
+        leaderboard.append((
+            user,
+            f"<a href='./users/{user}/regions.html'>States</a> | "
+            f"<a href='./users/{user}/systems.html'>Systems</a>",
+            matched,
+            total,
+            pct
+        ))
 
         write_leaderboard(
         leaderboard,
@@ -494,7 +515,10 @@ def validate_all():
         os.makedirs(user_dir, exist_ok=True)
 
         systems_html = os.path.join(user_dir, "systems.html")
+        write_nav(f, user_id=user, page_type="systems")
         regions_html = os.path.join(user_dir, "regions.html")
+        write_nav(f, user_id=user, page_type="regions")
+        
 
         write_leaderboard(
             leaderboard,
