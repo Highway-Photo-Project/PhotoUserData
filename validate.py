@@ -391,6 +391,7 @@ def validate_all():
     leaderboard = []
     systems, system_routes = load_systems()
     region_routes = load_regions()
+    TOTAL_PROJECT_ROUTES = sum(len(routes) for routes in region_routes.values())
     system_names = load_system_name_map()
     region_names = load_region_name_map()
 
@@ -471,14 +472,17 @@ def validate_all():
         region_summary.sort(key=lambda r: r[3], reverse=True)
 
         # ---- Leaderboard totals (ONCE per user) ----
-        total_routes = sum(t for _, _, t, _ in region_summary)
-        matched_routes = sum(m for _, m, _, _ in region_summary)
-        leaderboard_pct = (
-            matched_routes / total_routes * 100 if total_routes else 0.0
+        matched_routes = sum(
+             len(routes) for routes in matched_by_region.values()
         )
 
+        leaderboard_pct = (
+            matched_routes / TOTAL_PROJECT_ROUTES * 100
+            if TOTAL_PROJECT_ROUTES else 0.0
+        )
+        
         leaderboard.append(
-            (user_id, matched_routes, total_routes, leaderboard_pct)
+            (user_id, matched_routes, TOTAL_PROJECT_ROUTES, leaderboard_pct)
         )
 
         write_leaderboard(
