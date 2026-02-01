@@ -447,24 +447,23 @@ def validate_all():
             if route in region_routes[region]:
                 matched_by_region.setdefault(region, set()).add(route)
 
-        region_summary = []
+       region_summary = []
 
-        for region, routes in region_routes.items():
-            total_routes = sum(t for _, _, t, _ in region_summary)
-            matched_routes = sum(m for _, m, _, _ in region_summary)
-            pct = (matched_routes / total_routes * 100) if total_routes else 0.0
-            
-            total = len(routes)
-            matched = len(matched_by_region.get(region, set()))
-            pct = (matched / total * 100) if total else 0.0
+            for region, routes in region_routes.items():
+                total = len(routes)
+                matched = len(matched_by_region.get(region, set()))
+                pct = (matched / total * 100) if total else 0.0
 
-            display_name = region_names.get(region, region)
-            region_summary.append((display_name, matched, total, pct))
+                display_name = region_names.get(region, region)
+                region_summary.append((display_name, matched, total, pct))
+
+                total_routes = sum(t for _, _, t, _ in region_summary)
+                matched_routes = sum(m for _, m, _, _ in region_summary)
+                leaderboard_pct = (matched_routes / total_routes * 100) if total_routes else 0.0
 
             leaderboard.append(
-                (user_id, matched_routes, total_routes, pct)
+                (user_id, matched_routes, total_routes, leaderboard_pct)
             )
-            
 
         region_summary.sort(key=lambda r: r[3], reverse=True)
 
@@ -474,6 +473,11 @@ def validate_all():
 
         systems_html = os.path.join(user_dir, "systems.html")
         regions_html = os.path.join(user_dir, "regions.html")
+
+          write_leaderboard(
+            leaderboard,
+            os.path.join(OUTPUT_DIR, "index.html")
+         )
 
         write_html_report(
             title=f"{user_id} – Highway System Completion",
@@ -507,11 +511,6 @@ def validate_all():
 
         print(f"📄 {systems_html}")
         print(f"📄 {regions_html}")
-
-        write_leaderboard(
-            leaderboard,
-            os.path.join(OUTPUT_DIR, "index.html")
-        )
 
 
 if __name__ == "__main__":
