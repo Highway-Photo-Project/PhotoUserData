@@ -413,10 +413,10 @@ def validate_all():
 
         system_link_map = {}
 
-            for system_file in system_routes.keys():
-                system_code = system_file.replace(".csv", "")
-                display_name = system_names.get(system_code, system_code)
-                system_link_map[display_name] = f"{system_base_url}/{system_code}"
+        for system_file in system_routes.keys():
+            system_code = system_file.replace(".csv", "")
+            display_name = system_names.get(system_code, system_code)
+            system_link_map[display_name] = f"{system_base_url}/{system_code}"
 
         }
 
