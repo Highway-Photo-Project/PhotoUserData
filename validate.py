@@ -234,14 +234,12 @@ td a {{
 <body>
 """)
 
-        # ---- Navigation links (PYTHON, not HTML string) ----
         if nav_links:
             f.write("<div class='nav'>\n")
             for text, href in nav_links:
                 f.write(f"<a href='{href}'>{text}</a>\n")
             f.write("</div>\n")
 
-        # ---- Title and table header ----
         f.write(f"""
 <h1>{title}</h1>
 
@@ -395,6 +393,8 @@ td.num {
 """)
 
         for i, (user, m, t, pct) in enumerate(leaderboard, start=1):
+            color = completion_to_hsl(pct)
+
             f.write(
                 "<tr>"
                 f"<td class='num'>{i}</td>"
