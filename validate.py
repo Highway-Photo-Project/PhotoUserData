@@ -447,26 +447,33 @@ def validate_all():
             if route in region_routes[region]:
                 matched_by_region.setdefault(region, set()).add(route)
 
-       region_summary = []
+        region_summary = []
 
-            for region, routes in region_routes.items():
-                total = len(routes)
-                matched = len(matched_by_region.get(region, set()))
-                pct = (matched / total * 100) if total else 0.0
+        for region, routes in region_routes.items():
+            total = len(routes)
+            matched = len(matched_by_region.get(region, set()))
+            pct = (matched / total * 100) if total else 0.0
 
-                display_name = region_names.get(region, region)
-                region_summary.append((display_name, matched, total, pct))
-
-                total_routes = sum(t for _, _, t, _ in region_summary)
-                matched_routes = sum(m for _, m, _, _ in region_summary)
-                leaderboard_pct = (matched_routes / total_routes * 100) if total_routes else 0.0
-
-            leaderboard.append(
-                (user_id, matched_routes, total_routes, leaderboard_pct)
-            )
+            display_name = region_names.get(region, region)
+            region_summary.append((display_name, matched, total, pct))
 
         region_summary.sort(key=lambda r: r[3], reverse=True)
 
+        # ---- Leaderboard totals (ONCE per user) ----
+        total_routes = sum(t for _, _, t, _ in region_summary)
+        matched_routes = sum(m for _, m, _, _ in region_summary)
+        leaderboard_pct = (
+            matched_routes / total_routes * 100 if total_routes else 0.0
+        )
+
+        leaderboard.append(
+            (user_id, matched_routes, total_routes, leaderboard_pct)
+        )
+
+            write_leaderboard(
+        leaderboard,
+        os.path.join(OUTPUT_DIR, "index.html")
+    )
         # ---- Output ----
         user_dir = os.path.join(USERS_OUTPUT_DIR, user_id)
         os.makedirs(user_dir, exist_ok=True)
