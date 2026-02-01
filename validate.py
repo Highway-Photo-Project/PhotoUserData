@@ -401,7 +401,7 @@ td.num {
                 f"<td><a href='./users/{user}/systems.html'>{user}</a></td>"
                 f"<td class='num'>{m}</td>"
                 f"<td class='num'>{t}</td>"
-                f"<td class='num'>{pct:.2f}%</td>"
+                f"<td class='num' style='background-color: {color};'>{pct:.2f}%</td>"
                 "</tr>\n"
             )
 
