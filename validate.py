@@ -470,7 +470,7 @@ def validate_all():
             (user_id, matched_routes, total_routes, leaderboard_pct)
         )
 
-            write_leaderboard(
+        write_leaderboard(
         leaderboard,
         os.path.join(OUTPUT_DIR, "index.html")
     )
