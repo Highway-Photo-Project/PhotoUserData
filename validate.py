@@ -2,6 +2,9 @@ import os
 import csv
 from tabulate import tabulate
 
+# ----------------------------
+# Paths
+# ----------------------------
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -14,398 +17,225 @@ REGIONS_DIR = os.path.join(BASE_DIR, "..", "PhotoData", "_regions")
 SYSTEMS_INDEX = os.path.join(BASE_DIR, "..", "PhotoData", "systems.csv")
 REGIONS_INDEX = os.path.join(BASE_DIR, "..", "PhotoData", "regions.csv")
 
+os.makedirs(USERS_OUTPUT_DIR, exist_ok=True)
 
-os.makedirs(OUTPUT_DIR, exist_ok=True)
-
+# ----------------------------
+# Loaders
+# ----------------------------
 
 def load_systems():
-    """
-    Returns:
-      systems:
-        (region, route_name) -> system_file
-      system_routes:
-        system_file -> set(route_name)
-    """
     systems = {}
     system_routes = {}
 
-    for filename in os.listdir(SYSTEMS_DIR):
-        if not filename.endswith(".csv"):
+    for fn in os.listdir(SYSTEMS_DIR):
+        if not fn.endswith(".csv"):
             continue
 
-        path = os.path.join(SYSTEMS_DIR, filename)
-        system_routes[filename] = set()
-
-        with open(path, newline="", encoding="utf-8") as f:
+        system_routes[fn] = set()
+        with open(os.path.join(SYSTEMS_DIR, fn), encoding="utf-8") as f:
             reader = csv.reader(f, delimiter=";")
             next(reader, None)
-
             for row in reader:
                 if len(row) < 3:
                     continue
-
-                region = row[1].strip()
-                route_name = row[2].strip()
-
-                systems[(region, route_name)] = filename
-                system_routes[filename].add(route_name)
+                region, route = row[1].strip(), row[2].strip()
+                systems[(region, route)] = fn
+                system_routes[fn].add(route)
 
     return systems, system_routes
 
 
 def load_regions():
-    """
-    Returns:
-      region_routes:
-        region_code -> set(route_name)
-    """
     region_routes = {}
-
-    for filename in os.listdir(REGIONS_DIR):
-        if not filename.endswith(".csv"):
+    for fn in os.listdir(REGIONS_DIR):
+        if not fn.endswith(".csv"):
             continue
 
-        region = os.path.splitext(filename)[0]
-        path = os.path.join(REGIONS_DIR, filename)
-
+        region = os.path.splitext(fn)[0]
         region_routes[region] = set()
 
-        with open(path, newline="", encoding="utf-8") as f:
+        with open(os.path.join(REGIONS_DIR, fn), encoding="utf-8") as f:
             reader = csv.reader(f, delimiter=";")
-            next(reader, None)  # header
-
+            next(reader, None)
             for row in reader:
-                # Expecting at least: system / region / route
-                if len(row) < 3:
-                    continue
-
-                route_name = row[2].strip()
-
-                # Deduplicate by route designation ONLY
-                region_routes[region].add(route_name)
+                if len(row) >= 3:
+                    region_routes[region].add(row[2].strip())
 
     return region_routes
 
-def load_region_name_map():
-    """
-    Loads region abbreviation -> full name mapping from regions.csv
-    Header names are auto-detected to avoid KeyError.
-    """
-    name_map = {}
 
-    with open(REGIONS_INDEX, newline="", encoding="utf-8") as f:
+def load_name_map(path, code_keys, name_keys):
+    out = {}
+    with open(path, encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter=";")
+        headers = {h.lower(): h for h in reader.fieldnames}
 
-        # Normalize header names
-        fieldnames = {h.lower(): h for h in reader.fieldnames}
-
-        # Detect columns safely
-        code_col = fieldnames.get("region") or fieldnames.get("code") or fieldnames.get("abbrev")
-        name_col = fieldnames.get("name") or fieldnames.get("state")
+        code_col = next((headers[k] for k in code_keys if k in headers), None)
+        name_col = next((headers[k] for k in name_keys if k in headers), None)
 
         if not code_col or not name_col:
-            raise RuntimeError(
-                f"regions.csv must contain columns for region code and name. "
-                f"Found headers: {reader.fieldnames}"
-            )
+            raise RuntimeError(f"Bad headers in {path}")
 
         for row in reader:
-            region_code = row[code_col].strip()
-            full_name = row[name_col].strip()
-            name_map[region_code] = full_name
+            out[row[code_col].strip()] = row[name_col].strip()
 
-    return name_map
-    
+    return out
+
 
 def parse_list_file(path):
     entries = []
-
     with open(path, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
-
             parts = line.split(maxsplit=2)
-            if len(parts) < 2:
-                continue
-
-            region = parts[0]
-            route = parts[1]
-            url = parts[2] if len(parts) > 2 else None
-
-            entries.append((region, route, url))
-
+            if len(parts) >= 2:
+                entries.append((parts[0], parts[1]))
     return entries
 
 
-def load_system_name_map():
-    name_map = {}
+# ----------------------------
+# HTML helpers
+# ----------------------------
 
-    with open(SYSTEMS_INDEX, newline="", encoding="utf-8") as f:
-        reader = csv.reader(f, delimiter=";")
-        next(reader, None)
-
-        for row in reader:
-            if len(row) < 3:
-                continue
-
-            system_code = row[0].strip()
-            full_name = row[2].strip()
-            name_map[system_code] = full_name
-
-    return name_map
+def completion_color(pct):
+    pct = max(0, min(100, pct))
+    hue = pct * 240 / 100
+    return f"hsl({hue:.1f}, 80%, 80%)"
 
 
-def completion_to_hsl(percent):
-    percent = max(0.0, min(100.0, percent))
-    hue = percent * 240.0 / 100.0
-    return f"hsl({hue:.6f}, 80%, 80%)"
-
-
-def write_html_report(title, label, summary, html_out, link_map=None):
-    with open(html_out, "w", encoding="utf-8") as f:
-        f.write(f"""<!DOCTYPE html>
+def write_page_start(f, title):
+    f.write(f"""<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
 <title>{title}</title>
-
 <style>
-@font-face {{
-  font-family: "ModeNine";
-  src: url("../fonts/ModeNine-Regular.woff2") format("woff2"),
-       url("../fonts/ModeNine-Regular.woff") format("woff");
-}}
-
-body {{
-  font-family: "ModeNine", Arial, sans-serif;
-}}
-
+body {{ font-family: Arial, sans-serif; }}
 table {{
   border-collapse: collapse;
-  width: 50%;
+  margin: 0 auto;
+  width: 60%;
 }}
-
-table, tr, td {{
-  position: relative;
-}}
-
 th, td {{
   border: 1px solid #ccc;
   padding: 6px 8px;
 }}
-
-th {{
-  background: #eee;
-}}
-
-td.num {{
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}}
-
-td a {{
-  display: block;
-  width: 100%;
-  height: 100%;
-  color: inherit;
-  text-decoration: underline;
-  pointer-events: auto;
-  cursor: pointer;
-}}
+th {{ background: #eee; }}
+td.num {{ text-align: right; }}
 </style>
 </head>
 <body>
-
-<h1>{title}</h1>
-
-<table>
-<tr>
-  <th>{label}</th>
-  <th>Caught</th>
-  <th>Total</th>
-  <th>Completion</th>
-</tr>
-""")
-
-        for name, matched, total, pct in summary:
-            color = completion_to_hsl(pct)
-
-            if link_map and name in link_map:
-                name_cell = f"<a href='{link_map[name]}'>{name}</a>"
-            else:
-                name_cell = name
-
-            f.write(
-                "<tr>"
-                f"<td>{name_cell}</td>"
-                f"<td class='num'>{matched}</td>"
-                f"<td class='num'>{total}</td>"
-                f"<td class='num' style='background-color: {color};'>{pct:.2f}%</td>"
-                "</tr>\n"
-            )
-
-        f.write("""
-</table>
-</body>
-</html>
+<h1 style="text-align:center;">{title}</h1>
 """)
 
 
-def write_user_index(users, html_out):
-    with open(html_out, "w", encoding="utf-8") as f:
-        f.write("""<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>User Pages</title>
-<style>
-body {
-  font-family: Arial, sans-serif;
-}
-ul {
-  list-style: none;
-  padding: 0;
-}
-li {
-  margin: 6px 0;
-}
-a {
-  text-decoration: underline;
-}
-</style>
-</head>
-<body>
+def write_table(f, heading, rows, link_map=None):
+    f.write(f"<h2 style='text-align:center;'>{heading}</h2>\n")
+    f.write("<table><tr><th>Name</th><th>Caught</th><th>Total</th><th>%</th></tr>\n")
 
-<h1>User Pages</h1>
-<ul>
-""")
+    for name, m, t, pct in rows:
+        color = completion_color(pct)
+        cell = f"<a href='{link_map[name]}'>{name}</a>" if link_map and name in link_map else name
+        f.write(
+            f"<tr><td>{cell}</td>"
+            f"<td class='num'>{m}</td>"
+            f"<td class='num'>{t}</td>"
+            f"<td class='num' style='background:{color}'>{pct:.2f}%</td></tr>\n"
+        )
 
-        for user in sorted(users):
-            f.write(
-                f"<li>"
-                f"<a href='./{user}/regions.html'>{user}</a>"
-                f"</li>\n"
-            )
+    f.write("</table>\n")
 
-        f.write("""
-</ul>
-</body>
-</html>
-""")
 
+def write_page_end(f):
+    f.write("</body></html>")
+
+
+# ----------------------------
+# Main logic
+# ----------------------------
 
 def validate_all():
     systems, system_routes = load_systems()
     region_routes = load_regions()
-    system_names = load_system_name_map()
-    region_names = load_region_name_map()
+    system_names = load_name_map(SYSTEMS_INDEX, ["system", "code"], ["name"])
+    region_names = load_name_map(REGIONS_INDEX, ["region", "code"], ["name", "state"])
 
-    for filename in sorted(os.listdir(LIST_DIR)):
-        if not filename.endswith(".list"):
+    leaderboard = []
+
+    for fn in sorted(os.listdir(LIST_DIR)):
+        if not fn.endswith(".list"):
             continue
 
-        user_id = os.path.splitext(filename)[0]
-        list_path = os.path.join(LIST_DIR, filename)
+        user = os.path.splitext(fn)[0]
+        entries = parse_list_file(os.path.join(LIST_DIR, fn))
 
-        # Per-user base URL
-        state_base_url = f"https://tbks1.neocities.org/{user_id}/states"
-
-        # Build region link map AFTER base URL exists
-        region_link_map = {
-            full_name: f"{state_base_url}/{code}"
-            for code, full_name in region_names.items()
-        }
-
-        entries = parse_list_file(list_path)
-
-        # ---- Systems ----
-        matched_by_system = {}
-
-        for region, route, _ in entries:
-            key = (region, route)
-            if key not in systems:
-                continue
-
-            system_file = systems[key]
-            matched_by_system.setdefault(system_file, set()).add(route)
+        # ---- system stats ----
+        matched_sys = {}
+        for r, route in entries:
+            key = (r, route)
+            if key in systems:
+                matched_sys.setdefault(systems[key], set()).add(route)
 
         system_summary = []
-
-        for system_file, routes in system_routes.items():
+        for sysfile, routes in system_routes.items():
             total = len(routes)
-            matched = len(matched_by_system.get(system_file, set()))
-            pct = (matched / total * 100) if total else 0.0
+            matched = len(matched_sys.get(sysfile, set()))
+            pct = matched / total * 100 if total else 0
+            name = system_names.get(sysfile.replace(".csv", ""), sysfile)
+            system_summary.append((name, matched, total, pct))
 
-            system_code = system_file.replace(".csv", "")
-            system_name = system_names.get(system_code, system_code)
+        system_summary.sort(key=lambda x: x[3], reverse=True)
 
-            system_summary.append((system_name, matched, total, pct))
-
-        system_summary.sort(key=lambda r: r[3], reverse=True)
-
-        # ---- Regions ----
-        matched_by_region = {}
-
-        for region, route, _ in entries:
-            if region not in region_routes:
-                continue
-
-            if route in region_routes[region]:
-                matched_by_region.setdefault(region, set()).add(route)
+        # ---- region stats ----
+        matched_reg = {}
+        for r, route in entries:
+            if r in region_routes and route in region_routes[r]:
+                matched_reg.setdefault(r, set()).add(route)
 
         region_summary = []
-
-        for region, routes in region_routes.items():
+        for r, routes in region_routes.items():
             total = len(routes)
-            matched = len(matched_by_region.get(region, set()))
-            pct = (matched / total * 100) if total else 0.0
+            matched = len(matched_reg.get(r, set()))
+            pct = matched / total * 100 if total else 0
+            region_summary.append((region_names.get(r, r), matched, total, pct))
 
-            display_name = region_names.get(region, region)
-            region_summary.append((display_name, matched, total, pct))
+        region_summary.sort(key=lambda x: x[3], reverse=True)
 
-        region_summary.sort(key=lambda r: r[3], reverse=True)
-
-        # ---- Output ----
-        user_dir = os.path.join(USERS_OUTPUT_DIR, user_id)
+        # ---- output ----
+        user_dir = os.path.join(USERS_OUTPUT_DIR, user)
         os.makedirs(user_dir, exist_ok=True)
 
-        systems_html = os.path.join(user_dir, "systems.html")
-        regions_html = os.path.join(user_dir, "regions.html")
+        with open(os.path.join(user_dir, "regions.html"), "w", encoding="utf-8") as f:
+            write_page_start(f, f"{user} – State Completion")
+            write_table(f, "States", region_summary)
+            write_table(f, "System Breakdown", system_summary)
+            write_page_end(f)
 
-        write_html_report(
-            title=f"{user_id} – Highway System Completion",
-            label="System",
-            summary=system_summary,
-            html_out=systems_html
+        with open(os.path.join(user_dir, "systems.html"), "w", encoding="utf-8") as f:
+            write_page_start(f, f"{user} – System Completion")
+            write_table(f, "Systems", system_summary)
+            write_page_end(f)
+
+        total_m = sum(m for _, m, _, _ in system_summary)
+        total_t = sum(t for _, _, t, _ in system_summary)
+        pct = total_m / total_t * 100 if total_t else 0
+        leaderboard.append((user, total_m, total_t, pct))
+
+        print(tabulate(system_summary, headers=["System", "M", "T", "%"]))
+
+    # ---- leaderboard ----
+    leaderboard.sort(key=lambda x: x[3], reverse=True)
+    with open(os.path.join(OUTPUT_DIR, "index.html"), "w", encoding="utf-8") as f:
+        write_page_start(f, "Leaderboard")
+        write_table(
+            f,
+            "Overall Completion",
+            leaderboard,
+            link_map={u: f"./users/{u}/regions.html" for u, *_ in leaderboard}
         )
-
-        write_html_report(
-            title=f"{user_id} – State Completion",
-            label="State",
-            summary=region_summary,
-            html_out=regions_html,
-            link_map=region_link_map
-        )
-
-        # ---- Console output ----
-        print(f"\nUser: {user_id}")
-        print("Systems:")
-        print(tabulate(
-            [(s, m, t, f"{p:.2f}%") for s, m, t, p in system_summary],
-            headers=["System", "Matched", "Total", "Completion"],
-            tablefmt="github"
-        ))
-        print("Regions:")
-        print(tabulate(
-            [(r, m, t, f"{p:.2f}%") for r, m, t, p in region_summary],
-            headers=["State", "Matched", "Total", "Completion"],
-            tablefmt="github"
-        ))
-
-        print(f"📄 {systems_html}")
-        print(f"📄 {regions_html}")
+        write_page_end(f)
 
 
 if __name__ == "__main__":
