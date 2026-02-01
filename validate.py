@@ -498,7 +498,7 @@ def validate_all():
         )
         
         leaderboard.append((
-            user,
+            user_id,
             f"<a href='./users/{user}/regions.html'>States</a> | "
             f"<a href='./users/{user}/systems.html'>Systems</a>",
             matched,
