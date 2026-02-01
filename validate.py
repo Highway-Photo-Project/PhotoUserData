@@ -403,11 +403,17 @@ def validate_all():
 
         # Per-user base URL
         state_base_url = f"https://tbks1.neocities.org/{user_id}/states"
+        system_base_url = f"https://tbks1.neocities.org/{user_id}/systems"
 
         # Build region link map AFTER base URL exists
         region_link_map = {
             full_name: f"{state_base_url}/{code}"
             for code, full_name in region_names.items()
+        }
+
+        system_link_map = {
+            system_names.get(code, code): f"{system_base_url}/{code}"
+            for code in system_routes.keys()
         }
 
         entries = parse_list_file(list_path)
@@ -433,7 +439,8 @@ def validate_all():
             system_code = system_file.replace(".csv", "")
             system_name = system_names.get(system_code, system_code)
 
-            system_summary.append((system_name, matched, total, pct))
+            if matched > 0:
+                system_summary.append((system_name, matched, total, pct))
 
         system_summary.sort(key=lambda r: r[3], reverse=True)
 
@@ -455,7 +462,9 @@ def validate_all():
             pct = (matched / total * 100) if total else 0.0
 
             display_name = region_names.get(region, region)
-            region_summary.append((display_name, matched, total, pct))
+
+            if matched > 0:
+                region_summary.append((display_name, matched, total, pct))
 
         region_summary.sort(key=lambda r: r[3], reverse=True)
 
@@ -491,6 +500,7 @@ def validate_all():
             label="System",
             summary=system_summary,
             html_out=systems_html
+            link_map=system_link_map
         )
 
         write_html_report(
