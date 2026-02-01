@@ -172,55 +172,55 @@ def write_html_report(title, label, summary, html_out, link_map=None, nav_links=
 <title>{title}</title>
 
 <style>
-@font-face {
+@font-face {{
   font-family: "ModeNine";
   src: url("../fonts/ModeNine-Regular.woff2") format("woff2"),
        url("../fonts/ModeNine-Regular.woff") format("woff");
-}
+}}
 
-body {
+body {{
   font-family: "ModeNine", Arial, sans-serif;
-}
+}}
 
-h1 {
+h1 {{
   text-align: center;
-}
+}}
 
-.nav {
+.nav {{
   text-align: center;
   margin-bottom: 12px;
-}
+}}
 
-.nav a {
+.nav a {{
   margin: 0 10px;
   text-decoration: underline;
-}
+}}
 
-table {
+table {{
   border-collapse: collapse;
   width: 50%;
   margin: 0 auto;
-}
+}}
 
-table, tr, td {
+table, tr, td {{
   position: relative;
-}
+}}
 
-th, td {
+th, td {{
   border: 1px solid #ccc;
   padding: 6px 8px;
-}
+}}
 
-th {
+th {{
   background: #eee;
-}
+}}
 
-td.num {
+td.num {{
   text-align: right;
   font-variant-numeric: tabular-nums;
-}
+}}
 
-td a {
+td a {{
   display: block;
   width: 100%;
   height: 100%;
@@ -228,18 +228,21 @@ td a {
   text-decoration: underline;
   pointer-events: auto;
   cursor: pointer;
-}
+}}
 </style>
-
 </head>
 <body>
+""")
 
-<div class="nav">
+        # ---- Navigation links (PYTHON, not HTML string) ----
         if nav_links:
+            f.write("<div class='nav'>\n")
             for text, href in nav_links:
-                f.write(f"<a href='{href}'>{text}</a>")
-</div>
+                f.write(f"<a href='{href}'>{text}</a>\n")
+            f.write("</div>\n")
 
+        # ---- Title and table header ----
+        f.write(f"""
 <h1>{title}</h1>
 
 <table>
@@ -251,6 +254,7 @@ td a {
 </tr>
 """)
 
+        # ---- Table rows ----
         for name, matched, total, pct in summary:
             color = completion_to_hsl(pct)
 
@@ -268,6 +272,7 @@ td a {
                 "</tr>\n"
             )
 
+        # ---- Footer ----
         f.write("""
 </table>
 </body>
