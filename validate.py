@@ -384,7 +384,7 @@ td.num {
 </tr>
 """)
 
-        for i, (user, m, t, pct) in enumerate(leaderboard, start=1):
+        for i, (user, pages, m, t, pct) in enumerate(leaderboard, start=1):
             f.write(
                 "<tr>"
                 f"<td class='num'>{i}</td>"
