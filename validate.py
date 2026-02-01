@@ -185,6 +185,7 @@ body {{
 table {{
   border-collapse: collapse;
   width: 50%;
+  margin: 0 auto;
 }}
 
 table, tr, td {{
@@ -252,6 +253,37 @@ td a {{
 </html>
 """)
 
+def write_summary_table(f, label, summary, link_map):
+    f.write(f"""
+<h2>{label}</h2>
+<table>
+<tr>
+  <th>{label}</th>
+  <th>Caught</th>
+  <th>Total</th>
+  <th>Completion</th>
+</tr>
+""")
+
+    for name, matched, total, pct in summary:
+        color = completion_to_hsl(pct)
+
+        if link_map and name in link_map:
+            name_cell = f"<a href='{link_map[name]}'>{name}</a>"
+        else:
+            name_cell = name
+
+        f.write(
+            "<tr>"
+            f"<td>{name_cell}</td>"
+            f"<td class='num'>{matched}</td>"
+            f"<td class='num'>{total}</td>"
+            f"<td class='num' style='background-color: {color};'>{pct:.2f}%</td>"
+            "</tr>\n"
+        )
+
+    f.write("</table>\n")
+
 
 def write_user_index(users, html_out):
     with open(html_out, "w", encoding="utf-8") as f:
@@ -295,6 +327,65 @@ a {
 </html>
 """)
 
+
+def write_leaderboard(leaderboard, html_out):
+    leaderboard.sort(key=lambda r: r[3], reverse=True)
+
+    with open(html_out, "w", encoding="utf-8") as f:
+        f.write("""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Leaderboard</title>
+<style>
+table {
+  margin: 0 auto;
+  border-collapse: collapse;
+  width: 60%;
+}
+th, td {
+  border: 1px solid #ccc;
+  padding: 6px 8px;
+}
+th {
+  background: #eee;
+}
+td.num {
+  text-align: right;
+}
+</style>
+</head>
+<body>
+
+<h1>Leaderboard</h1>
+<table>
+<tr>
+  <th>Rank</th>
+  <th>User</th>
+  <th>Caught</th>
+  <th>Total</th>
+  <th>Completion</th>
+</tr>
+""")
+
+        for i, (user, m, t, pct) in enumerate(leaderboard, start=1):
+            f.write(
+                "<tr>"
+                f"<td class='num'>{i}</td>"
+                f"<td><a href='./users/{user}/regions.html'>{user}</a></td>"
+                f"<td class='num'>{m}</td>"
+                f"<td class='num'>{t}</td>"
+                f"<td class='num'>{pct:.2f}%</td>"
+                "</tr>\n"
+            )
+
+        f.write("""
+</table>
+</body>
+</html>
+""")
+
+write_leaderboard(leaderboard, os.path.join(OUTPUT_DIR, "index.html"))
 
 def validate_all():
     systems, system_routes = load_systems()
