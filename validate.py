@@ -499,8 +499,8 @@ def validate_all():
         
         leaderboard.append((
             user_id,
-            f"<a href='./users/{user}/regions.html'>States</a> | "
-            f"<a href='./users/{user}/systems.html'>Systems</a>",
+            f"<a href='./users/{user_id}/regions.html'>States</a> | "
+            f"<a href='./users/{user_id}/systems.html'>Systems</a>",
             matched,
             total,
             pct
