@@ -3,14 +3,11 @@ import csv
 import re
 
 BASE = "PhotoData/_counties"
+OUTPUT = "highest_lowest_routes_by_county.csv"
 
 route_re = re.compile(r"(\d+)")
 
 def extract_route_number(route_code):
-    """
-    Extract numeric route number from strings like:
-    AK1, AK11, AK98 -> 1, 11, 98
-    """
     match = route_re.search(route_code)
     return int(match.group(1)) if match else None
 
@@ -42,21 +39,29 @@ def analyze_counties(base_folder):
                     if route_num is None:
                         continue
 
-                    key = f"{state_code}/{county_name}"
+                    key = (state_code, county_name)
 
                     if key not in results:
-                        results[key] = {
-                            "lowest": route_num,
-                            "highest": route_num
-                        }
+                        results[key] = [route_num, route_num]
                     else:
-                        results[key]["lowest"] = min(results[key]["lowest"], route_num)
-                        results[key]["highest"] = max(results[key]["highest"], route_num)
+                        results[key][0] = min(results[key][0], route_num)
+                        results[key][1] = max(results[key][1], route_num)
 
     return results
 
-if __name__ == "__main__":
-    summary = analyze_counties(BASE)
+def write_output(results, output_file):
+    with open(output_file, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow([
+            "State",
+            "County",
+            "Lowest Route Number",
+            "Highest Route Number"
+        ])
 
-    for county, data in sorted(summary.items()):
-        print(f"{county}: Lowest = {data['lowest']}, Highest = {data['highest']}")
+        for (state, county), (low, high) in sorted(results.items()):
+            writer.writerow([state, county, low, high])
+
+if __name__ == "__main__":
+    results = analyze_counties(BASE)
+    write_output(results, OUTPUT)
