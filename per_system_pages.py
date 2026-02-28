@@ -161,8 +161,11 @@ def write_system_page(user, system_name, routes, listed_routes, out_path):
 
 <h1>{system_name}</h1>
 <h3>User: {user}</h3>
+""")
+
 f.write("<p><a href='../'>← Back</a></p>\n")
 
+f.write("""
 <table>
 <tr>
   <th>Route</th>
@@ -214,8 +217,11 @@ def write_state_page(user, state, listed_routes, out_path):
 
 <h1>{state}</h1>
 <h3>User: {user}</h3>
+""")
+
 f.write("<p><a href='../'>← Back</a></p>\n")
 
+f.write("""
 <table>
 <tr>
   <th>Route</th>
