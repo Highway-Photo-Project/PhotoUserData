@@ -111,7 +111,7 @@ def load_region_fullnames():
         return names
 
     with open(path, newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
+        reader = csv.DictReader(f, delimiter=";")
         for row in reader:
             names[row["region"]] = row["fullname"]
 
