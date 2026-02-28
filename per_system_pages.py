@@ -105,6 +105,7 @@ table {
   border-collapse: collapse;
   width: 50%;
   table-layout: fixed;
+  margin: 20px auto;
 }
 
 th, td {
@@ -160,6 +161,7 @@ def write_system_page(user, system_name, routes, listed_routes, out_path):
 
 <h1>{system_name}</h1>
 <h3>User: {user}</h3>
+f.write("<p><a href='../'>← Back</a></p>\n")
 
 <table>
 <tr>
@@ -176,7 +178,7 @@ def write_system_page(user, system_name, routes, listed_routes, out_path):
             if key in listed_routes:
                 row_class = "yes"
                 status = "YES"
-                proof = f"<a href='{url}'>link</a>" if url else ""
+                proof = f"<a href='{url}' target='_blank' rel='noopener noreferrer'>link</a>" if url else ""
             else:
                 row_class = "no"
                 status = "NO"
@@ -212,6 +214,7 @@ def write_state_page(user, state, listed_routes, out_path):
 
 <h1>{state}</h1>
 <h3>User: {user}</h3>
+f.write("<p><a href='../'>← Back</a></p>\n")
 
 <table>
 <tr>
@@ -228,7 +231,7 @@ def write_state_page(user, state, listed_routes, out_path):
             if key in listed_routes:
                 row_class = "yes"
                 status = "YES"
-                proof = f"<a href='{url}'>link</a>" if url else ""
+                proof = f"<a href='{url}' target='_blank' rel='noopener noreferrer'>link</a>" if url else ""
             else:
                 row_class = "no"
                 status = "NO"
