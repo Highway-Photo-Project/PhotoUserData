@@ -99,6 +99,7 @@ BASE_STYLE = """
 
 body {
   font-family: "ModeNine", Arial, sans-serif;
+  text-align: center;
 }
 
 table {
@@ -207,7 +208,7 @@ def write_state_page(user, state, listed_routes, out_path):
 
     with open(out_path, "w", encoding="utf-8") as f:
 
-        f.write(f"""<!DOCTYPE html>
+    f.write(f"""<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
@@ -220,9 +221,9 @@ def write_state_page(user, state, listed_routes, out_path):
 <h3>User: {user}</h3>
 """)
 
-        f.write("<p><a href='../'>← Back</a></p>\n")
-
-        f.write("""
+    f.write("<p><a href='../'>← Back</a></p>\n")
+       
+    f.write("""
 <table>
 <tr>
   <th>Route</th>
