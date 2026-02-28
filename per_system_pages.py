@@ -88,6 +88,35 @@ def load_system_routes(system_csv):
 
     return routes
 
+def load_system_fullnames():
+    path = os.path.join(BASE_DIR, "..", "PhotoData", "systems.csv")
+    names = {}
+
+    if not os.path.exists(path):
+        return names
+
+    with open(path, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            names[row["system"]] = row["fullname"]
+
+    return names
+
+
+def load_region_fullnames():
+    path = os.path.join(BASE_DIR, "..", "PhotoData", "regions.csv")
+    names = {}
+
+    if not os.path.exists(path):
+        return names
+
+    with open(path, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            names[row["region"]] = row["fullname"]
+
+    return names
+    
 
 BASE_STYLE = """
 <style>
@@ -104,7 +133,7 @@ body {
 
 table {
   border-collapse: collapse;
-  width: 50%;
+  width: 35%;
   table-layout: fixed;
   margin: 20px auto;
 }
@@ -133,6 +162,8 @@ td.status {
 </style>
 """
 
+SYSTEM_FULLNAMES = load_system_fullnames()
+REGION_FULLNAMES = load_region_fullnames()
 
 def write_system_page(user, system_name, routes, listed_routes, out_path):
     region_orders = {}
@@ -160,7 +191,7 @@ def write_system_page(user, system_name, routes, listed_routes, out_path):
 </head>
 <body>
 
-<h1>{system_name}</h1>
+<h1>{SYSTEM_FULLNAMES.get(system_name, system_name)}</h1>
 <h3>User: {user}</h3>
 """)
 
@@ -217,7 +248,7 @@ def write_state_page(user, state, listed_routes, out_path):
 </head>
 <body>
 
-<h1>{state}</h1>
+<h1>{REGION_FULLNAMES.get(state, state)}</h1>
 <h3>User: {user}</h3>
 
 <p><a href='index.html'>← Back</a></p>
