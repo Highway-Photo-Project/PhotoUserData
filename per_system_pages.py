@@ -219,11 +219,9 @@ def write_state_page(user, state, listed_routes, out_path):
 
 <h1>{state}</h1>
 <h3>User: {user}</h3>
-""")
 
-    f.write("<p><a href='../'>← Back</a></p>\n")
-       
-    f.write("""
+<p><a href='index.html'>← Back</a></p>
+
 <table>
 <tr>
   <th>Route</th>
