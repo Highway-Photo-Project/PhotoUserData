@@ -134,7 +134,6 @@ td.status {
 
 
 def write_system_page(user, system_name, routes, listed_routes, out_path):
-    # Load route order for each region used
     region_orders = {}
     for region, _ in routes:
         if region not in region_orders:
@@ -149,9 +148,9 @@ def write_system_page(user, system_name, routes, listed_routes, out_path):
             idx = 999999
         return (region, idx)
 
-with open(out_path, "w", encoding="utf-8") as f:
+    with open(out_path, "w", encoding="utf-8") as f:
 
-    f.write(f"""<!DOCTYPE html>
+        f.write(f"""<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
@@ -164,9 +163,9 @@ with open(out_path, "w", encoding="utf-8") as f:
 <h3>User: {user}</h3>
 """)
 
-    f.write("<p><a href='../'>← Back</a></p>\n")
+        f.write("<p><a href='../'>← Back</a></p>\n")
 
-    f.write("""
+        f.write("""
 <table>
 <tr>
   <th>Route</th>
@@ -174,13 +173,6 @@ with open(out_path, "w", encoding="utf-8") as f:
   <th>Proof</th>
 </tr>
 """)
-
-    for region, route in sorted(routes, key=sort_key):
-        key = (region, route)
-        url = listed_routes.get(key)
-    for region, route in sorted(routes, key=sort_key):
-        key = (region, route)
-        url = listed_routes.get(key)
 
         for region, route in sorted(routes, key=sort_key):
             key = (region, route)
@@ -213,9 +205,9 @@ with open(out_path, "w", encoding="utf-8") as f:
 def write_state_page(user, state, listed_routes, out_path):
     routes = load_region_route_order(state)
 
-with open(out_path, "w", encoding="utf-8") as f:
+    with open(out_path, "w", encoding="utf-8") as f:
 
-    f.write(f"""<!DOCTYPE html>
+        f.write(f"""<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
@@ -228,9 +220,9 @@ with open(out_path, "w", encoding="utf-8") as f:
 <h3>User: {user}</h3>
 """)
 
-    f.write("<p><a href='../'>← Back</a></p>\n")
+        f.write("<p><a href='../'>← Back</a></p>\n")
 
-    f.write("""
+        f.write("""
 <table>
 <tr>
   <th>Route</th>
@@ -238,9 +230,6 @@ with open(out_path, "w", encoding="utf-8") as f:
   <th>Proof</th>
 </tr>
 """)
-
-    for route in routes:
-        key = (state, route)
 
         for route in routes:
             key = (state, route)
@@ -268,7 +257,6 @@ with open(out_path, "w", encoding="utf-8") as f:
 </body>
 </html>
 """)
-
 
 def generate_pages():
     for list_file in sorted(os.listdir(LIST_DIR)):
