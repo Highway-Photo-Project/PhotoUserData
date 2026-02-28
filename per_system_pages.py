@@ -98,7 +98,7 @@ def load_system_fullnames():
     with open(path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter=";")
         for row in reader:
-            names[row["system"]] = row["fullname"]
+            names[row["System"]] = row["Name"]
 
     return names
 
@@ -113,7 +113,7 @@ def load_region_fullnames():
     with open(path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter=";")
         for row in reader:
-            names[row["region"]] = row["fullname"]
+            names[row["code"]] = row["name"]
 
     return names
     
