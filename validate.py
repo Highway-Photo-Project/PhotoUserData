@@ -428,11 +428,11 @@ def validate_all():
         user_id = os.path.splitext(filename)[0]
         list_path = os.path.join(LIST_DIR, filename)
 
-        # Per-user base URL
+        
         state_base_url = f"https://tbks1.neocities.org/{user_id}/states"
         system_base_url = f"https://tbks1.neocities.org/{user_id}/systems"
 
-        # Build region link map AFTER base URL exists
+        
         region_link_map = {
             full_name: f"{state_base_url}/{code}"
             for code, full_name in region_names.items()
@@ -497,7 +497,7 @@ def validate_all():
 
         region_summary.sort(key=lambda r: r[3], reverse=True)
 
-        # ---- Leaderboard totals (ONCE per user) ----
+        # ---- Leaderboard totals ---
         matched_routes = sum(
              len(routes) for routes in matched_by_region.values()
         )
@@ -570,8 +570,8 @@ def validate_all():
             tablefmt="github"
         ))
 
-        print(f"📄 {systems_html}")
-        print(f"📄 {regions_html}")
+        print(f" {systems_html}")
+        print(f" {regions_html}")
 
 
 if __name__ == "__main__":
