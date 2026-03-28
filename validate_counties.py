@@ -90,40 +90,13 @@ def write_state_html(user_dir, user_name, state, rows):
     out_path = os.path.join(user_dir, f"{state}_counties.html")
 
     with open(out_path, "w", encoding="utf-8") as f:
+
+        # Header
         f.write(f"""<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
 <title>{user_name} – {state} County Completion</title>
-<style>
-@font-face {{
-  font-family: "ModeNine";
-  src: url("../{FONT_PATH}") format("truetype");
-}}
-
-body {{
-  font-family: ModeNine, sans-serif;
-}}
-
-table {{
-  border-collapse: collapse;
-  margin-left: 0;
-  width: 700px;
-}}
-
-th, td {{
-  border: 1px solid #444;
-  padding: 6px 10px;
-}}
-
-th {{
-  background-color: #ddd;
-}}
-
-td.right {{
-  text-align: right;
-}}
-</style>
 </head>
 <body>
 
@@ -135,6 +108,7 @@ td.right {{
   <th>Total Routes</th>
   <th>Completed</th>
   <th>Percent</th>
+  <th>Missing Routes</th>
 </tr>
 """)
 
@@ -142,19 +116,20 @@ td.right {{
             color = hsl_for_percentage(pct)
             missing_str = ", ".join(missing) if missing else "—"
 
-    f.write(f"""
+            f.write(f"""
 <tr>
   <td>{county}</td>
   <td class="right">{total}</td>
   <td class="right">{matched}</td>
-  <td class="right" style="background-color: {color};" data-sort="{pct:.2f}">
+  <td class="right" style="background-color: {color};">
     {pct:.2f}%
   </td>
   <td>{missing_str}</td>
 </tr>
 """)
 
-    f.write("""
+        # Footer
+        f.write("""
 </table>
 </body>
 </html>
