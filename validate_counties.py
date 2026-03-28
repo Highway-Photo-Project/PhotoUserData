@@ -134,13 +134,8 @@ td.missing {{
 
             # 🔥 truncate long lists (optional but recommended)
             display_missing = missing[:12]
-            missing_str = ", ".join(display_missing)
-
-            if len(missing) > 12:
-                missing_str += f" (+{len(missing) - 12} more)"
-
-            if not missing:
-                missing_str = "—"
+            missing_str = ", ".join(missing) if missing else "—"
+            
 
             f.write(f"""
 <tr>
