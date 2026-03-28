@@ -138,9 +138,11 @@ td.right {{
 </tr>
 """)
 
-        for county, total, matched, pct in rows:
+        for county, total, matched, pct, missing in rows:
             color = hsl_for_percentage(pct)
-            f.write(f"""
+            missing_str = ", ".join(missing) if missing else "—"
+
+    f.write(f"""
 <tr>
   <td>{county}</td>
   <td class="right">{total}</td>
@@ -148,6 +150,7 @@ td.right {{
   <td class="right" style="background-color: {color};" data-sort="{pct:.2f}">
     {pct:.2f}%
   </td>
+  <td>{missing_str}</td>
 </tr>
 """)
 
@@ -177,15 +180,20 @@ def validate_counties():
 
             for county, routes in county_routes.items():
                 total = len(routes)
-                matched = sum(
-                    1 for route in routes
+
+                completed = {
+                    route for route in routes
                     if (region, route) in completed_pairs
-                )
+                }
 
+                missing = sorted(routes - completed)
+
+                matched = len(completed)
                 pct = (matched / total * 100) if total else 0
-                rows.append((county, total, matched, pct))
 
-            # ✅ rows exists HERE — safe to sort
+                rows.append((county, total, matched, pct, missing))
+
+                
             rows.sort(key=lambda r: r[3], reverse=True)
 
             write_state_html(user_dir, user_name, region, rows)
