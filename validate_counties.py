@@ -14,36 +14,22 @@ os.makedirs(OUTPUT_ROOT, exist_ok=True)
 
 # --------------------------------------- #
 
-
 def hsl_for_percentage(pct):
-    """
-    0%   -> hsl(0, 80%, 80%)
-    100% -> hsl(240, 80%, 80%)
-    """
     hue = (pct / 100) * 240
     return f"hsl({hue:.2f}, 80%, 80%)"
 
 
 def load_user_completed_pairs(list_path):
-    """
-    Reads a .list file with lines like:
-      AL I-65
-      AR I-40 https://example.com/image.jpg
-    Returns a set of (region, route)
-    """
     completed = set()
 
     with open(list_path, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
 
-            # skip comments and blanks
             if not line or line.startswith("#"):
                 continue
 
             parts = line.split()
-
-            # need at least region + route
             if len(parts) < 2:
                 continue
 
@@ -56,11 +42,7 @@ def load_user_completed_pairs(list_path):
 
 
 def load_state_counties(csv_path):
-    """
-    CSV format (with or without header):
-      Region;Route;County
-    """
-    county_routes = defaultdict(set)
+    county_routes = defaultdict(list)  # 🔥 list instead of set (preserves order)
     region_code = None
 
     with open(csv_path, newline="", encoding="utf-8") as f:
@@ -70,7 +52,6 @@ def load_state_counties(csv_path):
             if not row or len(row) < 3:
                 continue
 
-            # skip header row if present
             if row[0].lower() in ("region", "state"):
                 continue
 
@@ -79,25 +60,61 @@ def load_state_counties(csv_path):
             county = row[2].strip()
 
             region_code = region
-            county_routes[county].add(route)
+
+            # avoid duplicates but preserve order
+            if route not in county_routes[county]:
+                county_routes[county].append(route)
 
     return region_code, county_routes
 
-    # sort by percent complete (descending)
-    rows.sort(key=lambda r: r[3], reverse=True)
 
 def write_state_html(user_dir, user_name, state, rows):
     out_path = os.path.join(user_dir, f"{state}_counties.html")
 
     with open(out_path, "w", encoding="utf-8") as f:
-
-        # Header
         f.write(f"""<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
 <title>{user_name} – {state} County Completion</title>
+
+<style>
+@font-face {{
+  font-family: "ModeNine";
+  src: url("../{FONT_PATH}") format("truetype");
+}}
+
+body {{
+  font-family: ModeNine, sans-serif;
+}}
+
+table {{
+  border-collapse: collapse;
+  width: 900px;
+}}
+
+th, td {{
+  border: 2px solid #222;
+  padding: 6px 10px;
+  vertical-align: top;
+}}
+
+th {{
+  background-color: #ddd;
+}}
+
+td.right {{
+  text-align: right;
+}}
+
+td.missing {{
+  max-width: 400px;
+  white-space: normal;
+  word-wrap: break-word;
+}}
+</style>
 </head>
+
 <body>
 
 <h2>{user_name} – {state} County Completion</h2>
@@ -114,7 +131,16 @@ def write_state_html(user_dir, user_name, state, rows):
 
         for county, total, matched, pct, missing in rows:
             color = hsl_for_percentage(pct)
-            missing_str = ", ".join(missing) if missing else "—"
+
+            # 🔥 truncate long lists (optional but recommended)
+            display_missing = missing[:12]
+            missing_str = ", ".join(display_missing)
+
+            if len(missing) > 12:
+                missing_str += f" (+{len(missing) - 12} more)"
+
+            if not missing:
+                missing_str = "—"
 
             f.write(f"""
 <tr>
@@ -124,11 +150,10 @@ def write_state_html(user_dir, user_name, state, rows):
   <td class="right" style="background-color: {color};">
     {pct:.2f}%
   </td>
-  <td>{missing_str}</td>
+  <td class="missing">{missing_str}</td>
 </tr>
 """)
 
-        # Footer
         f.write("""
 </table>
 </body>
@@ -156,19 +181,21 @@ def validate_counties():
             for county, routes in county_routes.items():
                 total = len(routes)
 
-                completed = {
+                completed = [
                     route for route in routes
                     if (region, route) in completed_pairs
-                }
+                ]
 
-                missing = sorted(routes - completed)
+                missing = [
+                    route for route in routes
+                    if route not in completed
+                ]
 
                 matched = len(completed)
                 pct = (matched / total * 100) if total else 0
 
                 rows.append((county, total, matched, pct, missing))
 
-                
             rows.sort(key=lambda r: r[3], reverse=True)
 
             write_state_html(user_dir, user_name, region, rows)
