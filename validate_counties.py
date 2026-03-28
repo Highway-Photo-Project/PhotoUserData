@@ -154,7 +154,7 @@ td.right {{
 </tr>
 """)
 
-        f.write("""
+    f.write("""
 </table>
 </body>
 </html>
