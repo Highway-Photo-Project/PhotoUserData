@@ -90,7 +90,8 @@ body {{
 
 table {{
   border-collapse: collapse;
-  width: 900px;
+  width: 75%;
+  margin: 0 auto;
 }}
 
 th, td {{
@@ -107,8 +108,8 @@ td.right {{
   text-align: right;
 }}
 
-td.missing {{
-  max-width: 400px;
+td.routes {{
+  max-width: 300px;
   white-space: normal;
   word-wrap: break-word;
 }}
@@ -125,14 +126,16 @@ td.missing {{
   <th>Total Routes</th>
   <th>Completed</th>
   <th>Percent</th>
+  <th>Completed Routes</th>
   <th>Missing Routes</th>
 </tr>
 """)
 
-        for county, total, matched, pct, missing in rows:
+        for county, total, matched, pct, completed, missing in rows:
             color = hsl_for_percentage(pct)
 
             display_missing = missing[:12]
+            completed_str = ", ".join(completed) if completed else "—"
             missing_str = ", ".join(missing) if missing else "—"
             
 
@@ -144,7 +147,8 @@ td.missing {{
   <td class="right" style="background-color: {color};">
     {pct:.2f}%
   </td>
-  <td class="missing">{missing_str}</td>
+  <td class="routes">{completed_str}</td>
+  <td class="routes">{missing_str}</td>
 </tr>
 """)
 
@@ -188,7 +192,7 @@ def validate_counties():
                 matched = len(completed)
                 pct = (matched / total * 100) if total else 0
 
-                rows.append((county, total, matched, pct, missing))
+                rows.append((county, total, matched, pct, completed, missing))
 
             rows.sort(key=lambda r: r[3], reverse=True)
 
