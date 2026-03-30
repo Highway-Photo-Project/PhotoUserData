@@ -132,7 +132,6 @@ td.missing {{
         for county, total, matched, pct, missing in rows:
             color = hsl_for_percentage(pct)
 
-            # 🔥 truncate long lists (optional but recommended)
             display_missing = missing[:12]
             missing_str = ", ".join(missing) if missing else "—"
             
