@@ -116,7 +116,7 @@ def load_region_fullnames():
             names[row["code"]] = row["name"]
 
     return names
-    
+
 
 BASE_STYLE = """
 <style>
@@ -287,7 +287,7 @@ def write_state_page(user, state, listed_routes, out_path):
 """)
 
         # ---------- Summary Table ----------
-       f.write("""
+        f.write("""
 <table>
 <tr>
   <th>System</th>
@@ -297,38 +297,38 @@ def write_state_page(user, state, listed_routes, out_path):
 </tr>
 """)
 
-for system_name in sorted(
-    system_totals,
-    key=lambda s: (
-        -(system_totals[s]["done"] / system_totals[s]["total"]
-          if system_totals[s]["total"] else 0),
-        SYSTEM_FULLNAMES.get(s, s)
-    )
-):
+        for system_name in sorted(
+            system_totals
+            key-lambda s: (
+                -(system_totals[s]["done"] / system_totals[s]["total"]
+                  if system_totals[s]["total"] else 0),
+            SYSTEM_FULLNAMES.get(s, s)
+            )
+        ):
+        
+            done = system_totals[system_name]["done"]
+            total = system_totals[system_name]["total"]
+            pct = (done / total * 100) if total else 0
 
-    done = system_totals[system_name]["done"]
-    total = system_totals[system_name]["total"]
-    pct = (done / total * 100) if total else 0
+            hue = pct * 1.2
+            sat = 85
+            light = 78 - (pct * 0.10)
 
-    hue = pct * 1.2
-    sat = 95
-    light = 62
+            row_color = f"hsl({hue:.1f}, {sat}%, {light:.1f}%)"
 
-    row_color = f"hsl({hue:.1f}, {sat}%, {light}%)"
+            f.write(
+                f"<tr style=\"background-color:{row_color};\">"
+                f"<td>{SYSTEM_FULLNAMES.get(system_name, system_name)}</td>"
+                f"<td>{done}</td>"
+                f"<td>{total}</td>"
+                f"<td>{pct:.2f}%</td>"
+                f"</tr>\n"
+            )
 
-    f.write(
-        f"<tr style=\"background-color:{row_color};\">"
-        f"<td>{SYSTEM_FULLNAMES.get(system_name, system_name)}</td>"
-        f"<td>{done}</td>"
-        f"<td>{total}</td>"
-        f"<td>{pct:.2f}%</td>"
-        f"</tr>\n"
-    )
-
-f.write("</table>\n<br>\n")
+        f.write("</table>\n<br>\n")
 
         # ---------- Main Route Table ----------
-        
+
         f.write("""
 <table>
 <tr>
