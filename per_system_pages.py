@@ -303,8 +303,8 @@ def write_state_page(user, state, listed_routes, out_path):
             pct = (done / total * 100) if total else 0
 
             hue = pct * 1.2
-            sat = 95
-            light = 62
+            sat = 85
+            light = 78 - (pct * 0.10)
 
             row_color = f"hsl({hue:.1f}, {sat}%, {light:.1f}%)"
 
