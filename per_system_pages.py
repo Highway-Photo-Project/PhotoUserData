@@ -302,11 +302,9 @@ def write_state_page(user, state, listed_routes, out_path):
             total = system_totals[system_name]["total"]
             pct = (done / total * 100) if total else 0
 
-            # Travel Mapping style gradient
-            # 0% = red, 50% = yellow, 100% = green
-            hue = pct * 1.2          # maps 0-100 to 0-120
-            sat = 85                # vivid but not harsh
-            light = 78 - (pct * 0.10)   # slightly darker as progress increases
+            hue = pct * 1.2
+            sat = 85
+            light = 78 - (pct * 0.10)
 
             row_color = f"hsl({hue:.1f}, {sat}%, {light:.1f}%)"
 
@@ -318,7 +316,11 @@ def write_state_page(user, state, listed_routes, out_path):
                 f"<td>{pct:.2f}%</td>"
                 f"</tr>\n"
             )
+
+        f.write("</table>\n<br>\n")
+
         # ---------- Main Route Table ----------
+        
         f.write("""
 <table>
 <tr>
