@@ -116,6 +116,12 @@ def load_region_fullnames():
             names[row["code"]] = row["name"]
 
     return names
+    
+
+def completion_to_hsl(percent):
+    percent = max(0.0, min(100.0, percent))
+    hue = percent * 240.0 / 100.0
+    return f"hsl({hue:.6f}, 80%, 80%)"
 
 
 BASE_STYLE = """
@@ -310,11 +316,7 @@ def write_state_page(user, state, listed_routes, out_path):
             total = system_totals[system_name]["total"]
             pct = (done / total * 100) if total else 0
 
-            hue = pct * 1.2
-            sat = 85
-            light = 78 - (pct * 0.10)
-
-            row_color = f"hsl({hue:.6f}, 80%, 80%)"
+            row_color = completion_to_hsl(pct)
 
             f.write(
                 f"<tr style=\"background-color:{row_color};\">"
