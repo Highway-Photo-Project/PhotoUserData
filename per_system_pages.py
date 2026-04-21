@@ -302,14 +302,19 @@ def write_state_page(user, state, listed_routes, out_path):
             total = system_totals[system_name]["total"]
             pct = (done / total * 100) if total else 0
 
+            hue = int((pct / 100) * 120)
+            row_color = f"hsl({hue}, 100%, 75%)"
+
             f.write(
-                f"<tr>"
+                f"<tr style='background-color:{row_color};'>"
                 f"<td>{SYSTEM_FULLNAMES.get(system_name, system_name)}</td>"
                 f"<td>{done}</td>"
                 f"<td>{total}</td>"
                 f"<td>{pct:.2f}%</td>"
                 f"</tr>\n"
             )
+
+        f.write("</table>\n")
 
         f.write("</table>\n")
 
