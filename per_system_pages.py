@@ -237,6 +237,38 @@ def write_system_page(user, system_name, routes, listed_routes, out_path):
 def write_state_page(user, state, listed_routes, out_path):
     routes = load_region_route_order(state)
 
+    # Build route -> system lookup from all system CSVs
+    route_to_system = {}
+    system_totals = {}
+
+    for system_csv in sorted(os.listdir(SYSTEMS_DIR)):
+        if not system_csv.endswith(".csv"):
+            continue
+
+        system_name = system_csv.replace(".csv", "")
+        system_path = os.path.join(SYSTEMS_DIR, system_csv)
+
+        for region, route in load_system_routes(system_path):
+            if region != state:
+                continue
+
+            route_to_system[route] = system_name
+
+            if system_name not in system_totals:
+                system_totals[system_name] = {"done": 0, "total": 0}
+
+            system_totals[system_name]["total"] += 1
+
+    # Count completed routes
+    for route in routes:
+        key = (state, route)
+
+        if key in listed_routes:
+            system_name = route_to_system.get(route)
+
+            if system_name in system_totals:
+                system_totals[system_name]["done"] += 1
+
     with open(out_path, "w", encoding="utf-8") as f:
 
         f.write(f"""<!DOCTYPE html>
@@ -252,7 +284,37 @@ def write_state_page(user, state, listed_routes, out_path):
 <h3>User: {user}</h3>
 
 <p><a href='/users/{user}/regions'>← Back</a></p>
+""")
 
+        # ---------- Summary Table ----------
+        f.write("""
+<table>
+<tr>
+  <th>System</th>
+  <th>Completed</th>
+  <th>Total</th>
+  <th>Percent</th>
+</tr>
+""")
+
+        for system_name in sorted(system_totals):
+            done = system_totals[system_name]["done"]
+            total = system_totals[system_name]["total"]
+            pct = (done / total * 100) if total else 0
+
+            f.write(
+                f"<tr>"
+                f"<td>{SYSTEM_FULLNAMES.get(system_name, system_name)}</td>"
+                f"<td>{done}</td>"
+                f"<td>{total}</td>"
+                f"<td>{pct:.2f}%</td>"
+                f"</tr>\n"
+            )
+
+        f.write("</table>\n")
+
+        # ---------- Main Route Table ----------
+        f.write("""
 <table>
 <tr>
   <th>Route</th>
