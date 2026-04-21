@@ -314,7 +314,7 @@ def write_state_page(user, state, listed_routes, out_path):
             sat = 85
             light = 78 - (pct * 0.10)
 
-            row_color = f"hsl({hue:.1f}, {sat}%, {light:.1f}%)"
+            row_color = f"hsl({hue:.6f}, 80%, 80%)"
 
             f.write(
                 f"<tr style=\"background-color:{row_color};\">"
