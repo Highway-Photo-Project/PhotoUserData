@@ -137,11 +137,14 @@ body {
   text-align: center;
 }
 
-table {
-  border-collapse: collapse;
-  width: 35%;
+.top-table {
+  width: 55%;
   table-layout: fixed;
-  margin: 20px auto;
+}
+
+.bottom-table {
+  width: 35%;
+  margin: 0 auto;
 }
 
 th, td {
