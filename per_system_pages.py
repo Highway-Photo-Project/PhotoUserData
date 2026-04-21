@@ -299,7 +299,7 @@ def write_state_page(user, state, listed_routes, out_path):
 
         for system_name in sorted(
             system_totals,
-            key-lambda s: (
+            key=lambda s: (
                 -(system_totals[s]["done"] / system_totals[s]["total"]
                   if system_totals[s]["total"] else 0),
             SYSTEM_FULLNAMES.get(s, s)
