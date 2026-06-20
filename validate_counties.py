@@ -42,7 +42,7 @@ def load_user_completed_pairs(list_path):
 
 
 def load_state_counties(csv_path):
-    county_routes = defaultdict(list)  # 🔥 list instead of set (preserves order)
+    county_routes = defaultdict(list) 
     region_code = None
 
     with open(csv_path, newline="", encoding="utf-8") as f:
@@ -60,6 +60,9 @@ def load_state_counties(csv_path):
             county = row[2].strip()
 
             region_code = region
+
+            if region_code == "TXDOT":
+                region_code = "TX"
 
             # avoid duplicates but preserve order
             if route not in county_routes[county]:
