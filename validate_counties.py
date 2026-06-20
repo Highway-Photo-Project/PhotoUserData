@@ -177,6 +177,11 @@ def validate_counties():
         for csv_path in glob.glob(os.path.join(COUNTY_DATA_DIR, "*_counties.csv")):
             region, county_routes = load_state_counties(csv_path)
 
+            filename = os.path.basename(csv_path)
+
+            if filename == "TXDOT_counties.csv":
+                region = "TX"
+
             rows = []
 
             for county, routes in county_routes.items():
