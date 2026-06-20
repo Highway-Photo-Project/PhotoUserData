@@ -72,7 +72,7 @@ def load_state_counties(csv_path):
 
 
 def write_state_html(user_dir, user_name, state, rows):
-    out_path = os.path.join(user_dir, f"{state}_counties.html")
+    out_path = os.path.join(user_dir, f"{state}.html")
 
     with open(out_path, "w", encoding="utf-8") as f:
         f.write(f"""<!DOCTYPE html>
