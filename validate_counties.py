@@ -196,6 +196,7 @@ def validate_counties():
 
             rows.sort(key=lambda r: r[3], reverse=True)
 
+            state_name = os.path.splitext(os.path.basename(csv_path))[0]
             write_state_html(user_dir, user_name, region, rows)
 
 
