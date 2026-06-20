@@ -33,8 +33,8 @@ def load_user_completed_pairs(list_path):
             if len(parts) < 2:
                 continue
 
-            region = parts[0].upper()
-            route = parts[1].upper()
+            region = parts[0].strip().upper()
+            route = parts[1].strip().upper()
 
             completed.add((region, route))
 
@@ -205,7 +205,7 @@ def validate_counties():
             rows.sort(key=lambda r: r[3], reverse=True)
 
             state_name = os.path.splitext(os.path.basename(csv_path))[0]
-            write_state_html(user_dir, user_name, region, rows)
+            write_state_html(user_dir, user_name, state_name, rows)
 
 
 if __name__ == "__main__":
