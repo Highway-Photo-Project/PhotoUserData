@@ -1,5 +1,3 @@
-Full transparency, I used AI to help me write the code for this. I also had a friend of mine help me write the Python scripts and help guide me through it. I'm still new to writing code, and most of it is just databases and csv files saved in other repositories for this project. I guided it as best as I could, and adjusted it to my liking. This is still a learning project for me.
-
 Still in development and nowhere close to being publicly released (if ever), but I will be using this as a tracker for my highway photo completion progress instead of a bulky spreadsheet I was using previously.
 
 A few things that should be noted before creating a .list file for this project...
